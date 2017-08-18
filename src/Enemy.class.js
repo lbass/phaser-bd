@@ -6,6 +6,7 @@ function Enemy(props) {
 
   var enemy = this.game.add.sprite(this.positionIndex.x - 37, this.positionIndex.y, this.unit_image);
   enemy.anchor.set(0.5, 0.5);
+  this.game.physics.arcade.enable(enemy);
   this.enemy = enemy;
 }
 

@@ -7,6 +7,7 @@ var soundOnOffButtonY = CONFIG.getConfig('SOUND_ONOFF_BUTTON_Y');
 var closeButtonX = CONFIG.getConfig('CLOSE_BUTTON_X');
 var closeButtonY = CONFIG.getConfig('CLOSE_BUTTON_Y');
 var isGameover = false;
+var isBattling = false;
 var gameMode = 'NORMAL'; // DEPLOY, NORMAL
 
 var UNIT_CONFIG = {
@@ -83,8 +84,10 @@ var deployModeButton = {};
 var deployModefooter = {};
 var activePanel = {};
 var smallTip = {};
+var blurX;
+var blurY;
 
-var game = new Phaser.Game(gameWidthX, gameHeightX, Phaser.CANVAS, '',
+var game = new Phaser.Game(gameWidthX, gameHeightX, Phaser.CANVAS_FILTER, '',
 {
   preload: preload,
   create: create,
@@ -119,7 +122,8 @@ function preload() {
   game.load.image('active_panel', 'assets/말판on_ani.png');
   game.load.image('panel_selected', 'assets/빨간판.png');
 
-  game.load.image('valkyrie', 'assets/착한놈.png');
+  game.load.spritesheet('valkyrie', '/assets/도끼_sprite.png', 210, 210, 48);
+  // game.load.image('valkyrie', 'assets/착한놈.png');
   game.load.image('footman', 'assets/착한졸병1.png');
 
   game.load.image('bombermen', 'assets/나쁜해골.png');
@@ -129,9 +133,17 @@ function preload() {
   game.load.image('flag_2', 'assets/flag_2.png');
   game.load.image('flag_3', 'assets/flag_3.png');
 
+  game.load.script('BlurX', 'src/BlurX.js');
+  game.load.script('BlurY', 'src/BlurY.js');
+
 }
 
 function create() {
+  blurX = game.add.filter('BlurX');
+  blurY = game.add.filter('BlurY');
+  blurX.blur = 100;
+  blurY.blur = 100;
+
   var margin = 50;
   var x = -margin;
   var y = -margin;
@@ -144,22 +156,23 @@ function create() {
   game.add.sprite(0, 0, 'background');
   var bg1 = game.add.sprite(0, 0, 'bg_1');
   var bg2 = game.add.sprite(0, 0, 'bg_2');
-  game.time.events.loop(Phaser.Timer.SECOND, function(){
-    if(bg2.alpha === 0) {
-      bg2.alpha = 1;
+  game.time.events.loop(Phaser.Timer.SECOND / 2, function(){
+    if(bg2.visible) {
+      bg2.visible = false;
     } else {
-      bg2.alpha = 0;
+      bg2.visible = true;
     }
   }, this);
 
   activePanel = game.add.sprite(10, 330, 'active_panel');
-  activePanel.alpha = 0;
+  activePanel.visible = false;
+  activePanel.alpha = 0.5;
   selectedPanels = createSelectedPanels();
   game.add.sprite(32, 100, 'tip_01');
 
   var normalModefooter = game.add.sprite(0, 840, 'footer_ui_basic');
   deployModefooter = game.add.sprite(0, 755, 'footer_ui_select');
-  deployModefooter.alpha = 0;
+  deployModefooter.visible = false;
 
   for(var i = 0 ; i < myUnitsArray.length ; i++) {
     var properties = {
@@ -172,16 +185,26 @@ function create() {
   }
   sortUnitButton();
 
-  deployModeButton = game.add.sprite(42, 922, 'btn_member_0');
+  deployModeButton = game.add.button(360, 985, 'btn_member_0', null, this);
+  deployModeButton.anchor.set(0.5, 0.5);
   deployModeButton.inputEnabled = true;
   deployModeButton.events.onInputDown.add(function(me){
+    game.add.tween(me.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
     if(gameMode === 'NORMAL') {
       gameMode = 'DEPLOY';
     } else {
       gameMode = 'NORMAL';
     }
-  }, this);
-  game.add.sprite(42, 1065, 'btn_start');
+  }, deployModeButton);
+
+  var startButton = game.add.button(360, 1122, 'btn_start', null, this);
+  startButton.anchor.set(0.5, 0.5);
+  startButton.inputEnabled = true;
+  startButton.events.onInputDown.add(function(me){
+    game.add.tween(me.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
+    gameMode = 'BATTLE';
+  }, startButton);
+
   smallTip = game.add.sprite(266, 843, 'small_tip');
   var tween = game.add.tween(smallTip).to( { y:  smallTip.y - 10 }, 300, Phaser.Easing.Linear.None, false, 0, -1, true);
   tween.interpolation(function(v, k){
@@ -211,36 +234,42 @@ function create() {
 
 function createSelectedPanels() {
   var selectedPanels = [
-    game.add.sprite(56, 330, 'panel_selected'),
-    game.add.sprite(146, 330, 'panel_selected'),
-    game.add.sprite(236, 330, 'panel_selected'),
-    game.add.sprite(33, 414, 'panel_selected'),
-    game.add.sprite(123, 414, 'panel_selected'),
-    game.add.sprite(213, 414, 'panel_selected'),
-    game.add.sprite(10, 498, 'panel_selected'),
-    game.add.sprite(100, 498, 'panel_selected'),
-    game.add.sprite(190, 498, 'panel_selected')
+    game.add.button(56, 330, 'panel_selected', null, this),
+    game.add.button(146, 330, 'panel_selected', null, this),
+    game.add.button(236, 330, 'panel_selected', null, this),
+    game.add.button(33, 414, 'panel_selected', null, this),
+    game.add.button(123, 414, 'panel_selected', null, this),
+    game.add.button(213, 414, 'panel_selected', null, this),
+    game.add.button(10, 498, 'panel_selected', null, this),
+    game.add.button(100, 498, 'panel_selected', null, this),
+    game.add.button(190, 498, 'panel_selected', null, this)
   ]
 
-  for(var i =0 ; i < selectedPanels.length ; i++) {
+  for(var i = 0 ; i < selectedPanels.length ; i++) {
     selectedPanels[i].inputEnabled = true;
     selectedPanels[i].alpha = 0;
-    selectedPanels[i].data= {
+    selectedPanels[i].data = {
       'unit': null
     };
 
     selectedPanels[i].events.onInputOver.add(function(me){
       if(gameMode === 'DEPLOY') {
+        for(var i = 0 ; i < deployedUnits.length ; i++) {
+          if(deployedUnits[i].isButtonSelected) {
+          }
+        }
         me.alpha = 1;
       }
-    }, this);
+    }, selectedPanels[i]);
+
     selectedPanels[i].events.onInputOut.add(function(me){
       if(gameMode === 'DEPLOY') {
         if(!me.data['unit']) {
           me.alpha = 0;
         }
       }
-    }, this);
+    }, selectedPanels[i]);
+
     selectedPanels[i].events.onInputDown.add(function(me){
       if(gameMode === 'DEPLOY') {
         for(var i = 0 ; i < deployedUnits.length ; i++) {
@@ -258,7 +287,7 @@ function createSelectedPanels() {
           }
         }
       }
-    }, this);
+    }, selectedPanels[i]);
   }
 
   return selectedPanels;
@@ -321,24 +350,53 @@ function createEnemies() {
 
 function update(){
   if(gameMode === 'DEPLOY') {
-    smallTip.alpha = 0;
-    deployModefooter.alpha = 1;
-    activePanel.alpha = 1;
+    smallTip.visible = false;
+    deployModefooter.visible = true;
+    activePanel.visible = true;
+    if(activePanel.alpha === 0.5) {
+      game.add.tween(activePanel).to({alpha: 1}, 800, Phaser.Easing.Linear.None, true, 0, 0, true);
+    }
     for(var i = 0 ; i < deployedUnits.length ; i++) {
       if(!deployedUnits[i].deployed) {
-        var unitButton = deployedUnits[i].getUnitButton();
-        unitButton.alpha = 1;
+        deployedUnits[i].showUnitButton();
       }
     }
   } else {
     if(MAX_UNIT_COUNT > unitCount) {
-      smallTip.alpha = 1;
+      smallTip.visible = true;
     }
-    deployModefooter.alpha = 0;
-    activePanel.alpha = 0;
+    deployModefooter.visible = false;
+    activePanel.alpha = 0.5;
+    activePanel.visible = false;
     for(var i = 0 ; i < deployedUnits.length ; i++) {
-      var unitButton = deployedUnits[i].getUnitButton();
-      unitButton.alpha = 0;
+      deployedUnits[i].hideUnitButton();
+    }
+    if(gameMode === 'BATTLE') {
+      if(!isBattling) {
+        startBattle();
+        isBattling = true;
+      }
     }
   }
+}
+
+function startBattle() {
+  var unit = deployedUnits[0].unit;
+  var enemy = deployedEnemies[0].enemy;
+
+  deployedUnits[0].blurX.blur = 100;
+
+  var targetX = unit.x + 40;
+  unit.animations.stop();
+  var tween = game.add.tween(unit).to({x: targetX}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
+  tween.onComplete.add(function() {
+      unit.alpha = 0;
+      var tween2 = game.add.tween(unit).to({x: enemy.x - 85, y: enemy.y - 10}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
+      tween2.onComplete.add(function() {
+          unit.alpha = 1;
+          unit.animations.currentAnim.speed = 20;
+          unit.animations.play('attack');
+
+      },this);
+  }, this);
 }
