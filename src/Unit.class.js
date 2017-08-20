@@ -1,3 +1,4 @@
+var BLUR_MAX = 60;
 function Unit(props) {
   this.game = props.game;
   this.unitData = props.unitData;
@@ -6,7 +7,6 @@ function Unit(props) {
   this.isButtonSelected = false;
   this.unitIndex = 0;
   this.flag = null;
-  this.deployPosition = {};
 
   var unitButton = this.game.add.button(44, 798, this.unitData.icon_image, null, this);
   var unitButtonEffect = this.game.add.sprite(36, 790, 'icon_selected');
@@ -23,29 +23,19 @@ function Unit(props) {
   this.unitButtonEffect = unitButtonEffect;
 
   var unit = this.game.add.sprite(0, 0, this.unit_image);
-  //this.game.physics.arcade.enable(unit);
-  // unit.animations.add('normal', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], 14, true);
-  //
-  // var me = this;
-  // unit.animations.add('attack', [0, 14, 15, 16, 17], 5, false).onComplete.add(function(){
-  //   me.unit.animations.play('normal');
-  //   var targetX = me.unit.x - 40;
-  //   var tween3 = me.game.add.tween(me.unit).to({x: targetX}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
-  //   tween3.onComplete.add(function() {
-  //       me.unit.alpha = 0;
-  //       var tween2 = me.game.add.tween(me.unit).to({x: me.deployPosition.x, y: me.deployPosition.y}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
-  //       tween2.onComplete.add(function() {
-  //           me.unit.alpha = 1;
-  //       }, this);
-  //   }, this);
-  //
-  // }, this);
-  //
-  // unit.animations.add('attacked', [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], 16, false);
-  // unit.animations.add('selected', [34, 35, 36, 37, 38, 39, 40, 41 ,42, 43, 44, 45, 46, 47], 14, false);
+  this.game.physics.arcade.enable(unit);
 
-  //unit.animations.currentAnim.speed = 20;
-  //unit.animations.play('normal');
+  var animations = this.unitData.animations;
+
+  if(animations) {
+    unit.animations.add('normal', animations['normal'], animations['normal'].length, true);
+    unit.animations.add('attack', animations['attack'], animations['attack'].length, false);
+    unit.animations.add('attacked', animations['attacked'], animations['attacked'].length, false);
+    unit.animations.add('selected', animations['selected'], animations['selected'].length, false);
+    unit.animations.currentAnim.speed = 20;
+    unit.animations.play('normal');
+  }
+
   unit.visible = false;
   this.unit = unit;
 
@@ -69,7 +59,6 @@ Unit.prototype = {
       this.unitButton.visible = false;
       this.unitButtonEffect.visible = false;
       this.isButtonSelected = false;
-      this.deployPosition = { x: this.unit.x, y: this.unit.y }
       return true;
     }
     return false;
@@ -101,5 +90,55 @@ Unit.prototype = {
   updateZindex: function() {
     game.world.bringToTop(this.unit);
     game.world.bringToTop(this.flag);
+  },
+  attackEnemy: function(target) {
+    var me = this;
+    me.unit.animations.stop();
+    var movePath = [
+      {x: me.unit.x + 60, y: this.unit.y, duration: 300},
+      {x: target.x - 145, y: target.y - 10, duration: 300},
+      {x: target.x - 85, y: target.y - 10, duration: 300},
+      {x: me.unit.x , y: this.unit.y, duration: 300}
+    ];
+
+    me.unit.animations.getAnimation('attack').onComplete.add(function(){
+      me.game.time.events.add(200, function(){
+        me.unit.animations.play('normal');
+        me.blurX.blur = BLUR_MAX;
+        var move4 = me._move(movePath[1].x, movePath[1].y, movePath[1].duration, function() {
+          me.unit.alpha = 0;
+          var move5 = me._move(movePath[0].x, movePath[0].y, movePath[0].duration, function() {
+            me.unit.alpha = 1;
+            var move6 = me._move(movePath[3].x, movePath[3].y, movePath[3].duration, function() {
+              me.blurX.blur = 0;
+              me.unit.alpha = 1;
+            });
+          });
+        });
+      }, me);
+    }, me);
+
+    me.blurX.blur = BLUR_MAX;
+    var move1 = me._move(movePath[0].x, movePath[0].y, movePath[0].duration, function() {
+      me.unit.alpha = 0;
+      var move2 = me._move(movePath[1].x, movePath[1].y, movePath[1].duration, function() {
+        me.unit.alpha = 1;
+        var move3 = me._move(movePath[2].x, movePath[2].y, movePath[2].duration, function() {
+          me.blurX.blur = 0;
+          me.game.time.events.add(100, function(){
+            me.unit.animations.play('attack');
+            me.unit.animations.currentAnim.speed = 21;
+          }, me);
+        });
+      });
+    });
+  },
+  _move: function(targetX, targetY, duration, callback) {
+    var me = this;
+    var tween = this.game.add.tween(this.unit).to({x: targetX, y: targetY}, duration, Phaser.Easing.Linear.None, true, 0, 0, false);
+    tween.onComplete.add(function() {
+      callback();
+    }, me);
+    return tween;
   }
-}
+};

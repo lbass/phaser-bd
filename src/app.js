@@ -19,7 +19,12 @@ var UNIT_CONFIG = {
     agility:100,
     icon_image: 'icon_01',
     unit_image: 'valkyrie',
-    mercenary: false
+    animations: {
+      normal: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      attack: [0, 14, 15, 16, 17],
+      attacked: [0, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+      selected: [0, 34, 35, 36, 37, 38, 39, 40, 41 ,42, 43, 44, 45, 46, 47]
+    }
   },
   'footman': {
     name: 'footman',
@@ -28,8 +33,7 @@ var UNIT_CONFIG = {
     armor:100,
     agility:100,
     icon_image: 'icon_02',
-    unit_image: 'footman',
-    mercenary: true
+    unit_image: 'footman'
   },
   'spearman': {
     name: 'spearman',
@@ -38,8 +42,7 @@ var UNIT_CONFIG = {
     armor:100,
     agility:100,
     icon_image: 'icon_03',
-    unit_image: 'footman',
-    mercenary: true
+    unit_image: 'footman'
   }
 };
 var myUnitsArray = ['valkyrie','footman','spearman'];
@@ -75,7 +78,7 @@ var enemyPanels = [
   { x: 507, y: 414 },
   { x: 710, y: 498 },
   { x: 620, y: 498 },
-  { x: 530, y: 498 }]
+  { x: 530, y: 498 }];
 
 var deployedUnits = [];
 var deployedEnemies = [];
@@ -372,31 +375,14 @@ function update(){
       deployedUnits[i].hideUnitButton();
     }
     if(gameMode === 'BATTLE') {
-      if(!isBattling) {
         startBattle();
-        isBattling = true;
-      }
+        gameMode = 'NORMAL';
     }
   }
 }
 
 function startBattle() {
-  var unit = deployedUnits[0].unit;
+  var unit = deployedUnits[0];
   var enemy = deployedEnemies[0].enemy;
-
-  deployedUnits[0].blurX.blur = 100;
-
-  var targetX = unit.x + 40;
-  unit.animations.stop();
-  var tween = game.add.tween(unit).to({x: targetX}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
-  tween.onComplete.add(function() {
-      unit.alpha = 0;
-      var tween2 = game.add.tween(unit).to({x: enemy.x - 85, y: enemy.y - 10}, 800, Phaser.Easing.Linear.None, true, 0, 0, false);
-      tween2.onComplete.add(function() {
-          unit.alpha = 1;
-          unit.animations.currentAnim.speed = 20;
-          unit.animations.play('attack');
-
-      },this);
-  }, this);
+  unit.attackEnemy(enemy);
 }

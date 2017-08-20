@@ -13,4 +13,4 @@ function Enemy(props) {
 Enemy.prototype = {
   update: function() {
   }
-}
+};
