@@ -71,7 +71,7 @@ var CONFIG = {
       'craw' :{
         name: 'craw',
         hp:100,
-        power:30,
+        power:100,
         armor:100,
         agility:100,
         unit_image: 'craw',

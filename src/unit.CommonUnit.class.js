@@ -40,12 +40,6 @@ function CommonUnit(props) {
   this.flag = this.game.add.sprite(0, 0, 'flag_1');
   this.flag.anchor.set(0.5, 0.5);
 
-  this.blurX = this.game.add.filter('BlurX');
-  this.blurY = this.game.add.filter('BlurY');
-  this.blurX.blur = 0;
-  this.blurY.blur = 0;
-  unit.filters = [this.blurX, this.blurY];
-
   this.isEndAttack = false;
   this.isEndTargetAni = false;
   this.isActionable = true;
@@ -162,16 +156,13 @@ CommonUnit.prototype = {
     var me = this;
     me.unit.alpha = 0.3;
     me.hpGrp.visible = false;
-    me.blurX.blur = 50;
     me.unit.animations.play('attack');
     me.unit.animations.currentAnim.speed = 21;
 
     var handler = function(sprite, ani) {
-      me.blurX.blur = 70;
       me.game.add.tween(this.unit).to({x: movePath[1].x, y: movePath[1].y},  movePath[1].duration, Phaser.Easing.Linear.None, true, 0, 0, false);
       me.game.time.events.add(movePath[1].duration + 50, function() {
         me.unit.animations.play('normal');
-        me.blurX.blur = 0;
         me.unit.alpha = 1;
         me.hpGrp.visible = true;
         me.isEndAttack = true;
@@ -183,7 +174,6 @@ CommonUnit.prototype = {
     me.game.add.tween(this.unit).to({x: movePath[0].x, y: movePath[0].y},  movePath[0].duration, Phaser.Easing.Linear.None, true, 0, 0, false);
     me.game.time.events.add(movePath[0].duration + 50, function() {
       me.unit.alpha = 1;
-      me.blurX.blur = 0;
       me.hitTarget(targetOrTargets);
     }, this);
   },

@@ -10,16 +10,14 @@ var GAME_MODE = 'NORMAL'; // DEPLOY, NORMAL
 
 var MY_UNIT_NAME_ARRAY = ['axeman','swordman','swordman'];
 var MAX_MY_UNIT_COUNT = MY_UNIT_NAME_ARRAY.length;
-var MY_DEPLOYED_UNIT_COUNT = 0;
-
 var UNIT_CONFIG = CONFIG.getConfig('UNIT_CONFIG');
-
 var MY_UNIT_PANEL_XY = CONFIG.getConfig('MY_UNIT_PANEL_XY');
 var ENEMY_UNIT_PANEL_XY = CONFIG.getConfig('ENEMY_UNIT_PANEL_XY');
-var MY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
-var ENEMY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
 var ENEMIES_NAME_ARRAY = ['craw',null,null,null,'skel',null,null,'craw',null];
 
+var MY_DEPLOYED_UNIT_COUNT = 0;
+var MY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
+var ENEMY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
 var ROUND = 0;
 var CURRENT_TURN = 0;
 var GAME_ALL_MASK = {};
@@ -51,7 +49,7 @@ var SMALL_TIP = {};
 var TUTORIAL_MOVIE = {};
 var TUTORIAL_BUTTON = {};
 
-var GAME = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.CANVAS_FILTER, '',
+var GAME = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.CANVAS, '',
 {
   preload: preload,
   create: create,
@@ -155,6 +153,10 @@ function create() {
   BATTLE_START_BUTTON.inputEnabled = true;
   BATTLE_START_BUTTON.events.onInputDown.add(function(me){
     GAME.add.tween(me.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
+    if(DEPLOYED_MY_UNITS.length <= 0) {
+      alert('배치된 유닛이 없습니다.');
+      return;
+    }
     CURRENT_TURN = 0;
     for(var i = 0 ; i < DEPLOYED_MY_UNITS.length ; i++) {
       TURN_ORDER[i] = DEPLOYED_MY_UNITS[i];
@@ -263,6 +265,9 @@ function plyaTutorial() {
     closeTutorial();
   }, this);
 
+  GAME.world.bringToTop(GAME_ALL_MASK);
+  GAME.world.bringToTop(TUTORIAL_MOVIE);
+  GAME.world.bringToTop(closeButton);
   TUTORIAL_MOVIE.visible = true;
   var timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 3, function(){
     loopCount++;
@@ -526,6 +531,41 @@ function gameOver(type) {
     alert('스토어로 이동합니다.');
   }, this);
   GAME.add.button(146, buttonY + 114, 'replay_btn', function(){
+    GAME.world.removeAll();
+
+    MY_DEPLOYED_UNIT_COUNT = 0;
+    MY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
+    ENEMY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
+    ROUND = 0;
+    CURRENT_TURN = 0;
+    GAME_ALL_MASK = {};
+    GAME_MASK = {};
+    GAME_RED_MASK = {};
+    START_EFFECT = {};
+    BOMB_EFFECT = {};
+    DISPLAY_ROUND = {};
+    BG_ROUND = {};
+    SPEED_SPRITE = {};
+    KO_SPRITE_01 = {};
+    KO_SPRITE_02 = {};
+    KO_SPRITE_03 = {};
+    LEFT_BATTLE_UNIT_PANEL = {};
+    RIGHT_BATTLE_UNIT_PANEL = {};
+    SKILL_TEXT = {};
+    MY_UNIT_ATTACK_READY_PANEL = {};
+    DEPLOYED_MY_UNITS = [];
+    DEPLOYED_ENEMIES = [];
+    TURN_ORDER = [];
+    MY_UNITS = [];
+    SELECTABLE_PANELS = [];
+    DEPLOY_MODE_BUTTON = {};
+    BATTLE_START_BUTTON = {};
+    DEPLOY_MODE_FOOTER = {};
+    ACTIVE_PANEL = {};
+    SMALL_TIP = {};
+    TUTORIAL_MOVIE = {};
+    TUTORIAL_BUTTON = {};
+
     GAME.state.restart();
   }, this);
   SPEED_SPRITE.visible = false;
