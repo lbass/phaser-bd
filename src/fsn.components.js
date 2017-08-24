@@ -1,5 +1,6 @@
 fsn = {};
 fsn.components = {};
+fsn.util = {};
 
 fsn.components.SoundOnOffButton = function(props) {
   var thisGame = props.game;
@@ -38,6 +39,152 @@ fsn.components.GameCloseButton = function(props) {
 
   return closeButton;
 }
+fsn.util.playKoAnimation = function(x, y) {
+  if(!KO_SPRITE_01.visible) {
+    KO_SPRITE_01.visible = true;
+    KO_SPRITE_01.x = x;
+    KO_SPRITE_01.y = y;
+    KO_SPRITE_01.play('run');
+    KO_SPRITE_01.animations.currentAnim.speed = 21;
+    return;
+  }
+  if(!KO_SPRITE_02.visible) {
+    KO_SPRITE_02.visible = true;
+    KO_SPRITE_02.x = x;
+    KO_SPRITE_02.y = y;
+    KO_SPRITE_02.play('run');
+    KO_SPRITE_02.animations.currentAnim.speed = 21;
+    return;
+  }
+  if(!KO_SPRITE_03.visible) {
+    KO_SPRITE_03.visible = true;
+    KO_SPRITE_03.x = x;
+    KO_SPRITE_03.y = y;
+    KO_SPRITE_03.play('run');
+    KO_SPRITE_03.animations.currentAnim.speed = 21;
+    return;
+  }
+}
+
+fsn.util.alertStartRound = function(roundCount) {
+  DISPLAY_ROUND.loadTexture('round_' + roundCount, 0);
+  BG_ROUND.loadTexture('bg_round_' + roundCount, 0);
+  var tempMask = GAME.add.graphics(0, 0);
+  tempMask.beginFill(0x000000);
+  tempMask.drawRect(0, 0, 820, 1350);
+  tempMask.alpha = 0.8;
+  GAME.world.bringToTop(DISPLAY_ROUND);
+  var tween = GAME.add.tween(DISPLAY_ROUND).to({alpha: 1}, 400, Phaser.Easing.Linear.None, true, 000, 0, true);
+  tween.onComplete.add(function() {
+    tempMask.alpha = 0;
+    tempMask.destroy();
+  })
+  BG_ROUND.visible = true;
+  SPEED_SPRITE.visible = true;
+  SPEED_SPRITE.play('run');
+}
+
+fsn.util.hideAttackReadyPannel = function() {
+  MY_UNIT_ATTACK_READY_PANEL.visible = false;
+}
+
+fsn.util.showMask = function() {
+  GAME_MASK.alpha = 0.6;
+}
+
+fsn.util.hideMask = function() {
+  GAME_MASK.alpha = 0;
+}
+
+fsn.util.showFadeOutMask= function(duration) {
+  GAME.add.tween(GAME_MASK).to({alpha: 0.8}, duration, Phaser.Easing.Linear.None, true, 000, 0, true);
+}
+
+fsn.util.showRedMask = function() {
+  GAME_RED_MASK.alpha = 0.6;
+}
+
+fsn.util.hideRedMask = function() {
+  GAME_RED_MASK.alpha = 0;
+}
+
+fsn.util.showRedMask = function() {
+  GAME_RED_MASK.alpha = 0.2;
+}
+
+fsn.util.getEnemyPanelPosition = function(type) {
+  if(type === 'my') {
+    return ENEMY_UNIT_POSITION;
+  }
+  return MY_UNIT_POSITION;
+}
+
+fsn.util.playBattleStartEffect = function(x, y) {
+  START_EFFECT.visible = true;
+  START_EFFECT.x = x;
+  START_EFFECT.y = y;
+  START_EFFECT.animations.currentAnim.speed = 20;
+  START_EFFECT.play('battleEffect');
+}
+
+fsn.util.showAttackReadyPannel = function(x, y, duration) {
+  MY_UNIT_ATTACK_READY_PANEL.visible = true;
+  MY_UNIT_ATTACK_READY_PANEL.x = x - 48;
+  MY_UNIT_ATTACK_READY_PANEL.y = y - 2;
+  GAME.add.tween(MY_UNIT_ATTACK_READY_PANEL).to({alpha: 1}, duration, Phaser.Easing.Linear.None, true, 0, 0, true);
+}
+
+fsn.util.playBoombEffect = function(x, y) {
+  GAME.world.bringToTop(BOMB_EFFECT);
+  BOMB_EFFECT.visible = true;
+  BOMB_EFFECT.x = x;
+  BOMB_EFFECT.y = y;
+  BOMB_EFFECT.animations.currentAnim.speed = 21;
+  BOMB_EFFECT.play('explosion');
+}
+
+fsn.util.getAliveEnemies = function(type) {
+  var resultList = new Array();
+  var targetList = null;
+  if(type === 'my') {
+    targetList = DEPLOYED_ENEMIES;
+  } else {
+    targetList = DEPLOYED_MY_UNITS
+  }
+  for(var i = 0 ; i < targetList.length; i++) {
+    if(targetList[i].alive) {
+      resultList.push(targetList[i]);
+    }
+  }
+  return resultList;
+}
+
+fsn.util.showBattleUnitPanel = function(left, right) {
+    LEFT_BATTLE_UNIT_PANEL.x = left.x - 47;
+    LEFT_BATTLE_UNIT_PANEL.y = left.y - 1;
+    LEFT_BATTLE_UNIT_PANEL.visible = true;
+    RIGHT_BATTLE_UNIT_PANEL.x = right.x - 57;
+    RIGHT_BATTLE_UNIT_PANEL.y = right.y + 2;
+    RIGHT_BATTLE_UNIT_PANEL.visible = true;
+}
+
+fsn.util.hideBattleUnitPanel = function() {
+    LEFT_BATTLE_UNIT_PANEL.x = 0
+    LEFT_BATTLE_UNIT_PANEL.y = 0;
+    LEFT_BATTLE_UNIT_PANEL.visible = false;
+    RIGHT_BATTLE_UNIT_PANEL.x = 0;
+    RIGHT_BATTLE_UNIT_PANEL.y = 0;
+    RIGHT_BATTLE_UNIT_PANEL.visible = false;
+}
+
+fsn.util.showSkill = function(skillName) {
+  SKILL_TEXT.loadTexture(skillName);
+  SKILL_TEXT.visible = true;
+}
+
+fsn.util.hideSkill = function() {
+  SKILL_TEXT.visible = false;
+}
 
 fsn.components.zoomTo = function (isMyUnit) {
   var duration = 300;
@@ -58,59 +205,4 @@ fsn.components.zoomOut = function() {
   cameraBounds.x = -50;
   game.camera.scale.x = 1.0;
   game.camera.scale.y = 1.0;
-
-}
-
-fsn.components.attackEnemy = function(target) {
-  var me = this;
-  if(me.isAttacking) {
-    return;
-  }
-
-  me.flag.visible = false;
-  me.isAttacking = true;
-  me.unit.animations.stop();
-  var movePath = [
-    {x: me.unit.x + this._MOVE_PATH_01_X, y: this.unit.y, duration: 150},
-    {x: target.x + this._MOVE_PATH_02_X, y: target.y + this._MOVE_PATH_02_Y, duration: 150},
-    {x: target.x + this._MOVE_PATH_03_X, y: target.y + this._MOVE_PATH_03_Y, duration: 150},
-    {x: me.unit.x , y: this.unit.y, duration: 150}
-  ];
-
-  me.unit.animations.getAnimation('attack').onComplete.add(function(){
-    me.game.time.events.add(200, function(){
-      me.unit.animations.play('normal');
-      me.blurX.blur = BLUR_MAX;
-      var move4 = me._move(movePath[1].x, movePath[1].y, movePath[1].duration, function() {
-        //me.unit.alpha = 0;
-        var move5 = me._move(movePath[0].x, movePath[0].y, movePath[0].duration, function() {
-          me.unit.alpha = 1;
-          var move6 = me._move(movePath[3].x, movePath[3].y, movePath[3].duration, function() {
-            me.blurX.blur = 0;
-            me.unit.alpha = 1;
-            me.flag.visible = true;
-            me.isEndOfTurn = true;
-            me.isAttacking = false;
-          });
-        });
-      });
-    }, me);
-  }, me);
-
-  me.blurX.blur = BLUR_MAX;
-  var move1 = me._move(movePath[0].x, movePath[0].y, movePath[0].duration, function() {
-    //me.unit.alpha = 0;
-    var move2 = me._move(movePath[1].x, movePath[1].y, movePath[1].duration, function() {
-      me.unit.alpha = 1;
-      var move3 = me._move(movePath[2].x, movePath[2].y, movePath[2].duration, function() {
-        me.blurX.blur = 0;
-        me.game.time.events.add(300, function(){
-          me.unit.animations.play('attack');
-          target.animations.play('attacked');
-          me.unit.animations.currentAnim.speed = 21;
-          me._hitEffect();
-        }, me);
-      });
-    });
-  });
 }
