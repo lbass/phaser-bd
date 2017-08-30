@@ -1,5 +1,6 @@
 'use strict';
-let GAME = null;
+let GAME = {};
+let func = {};
 let CONFIG = null;
 
 let GAME_WIDTH = 0;
@@ -18,31 +19,36 @@ let SPRITE_SHEETS = [];
 // data preload
 let request = new XMLHttpRequest();
 request.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      CONFIG = JSON.parse(this.responseText);
-      IMAGES = CONFIG.images;
-      SPRITE_SHEETS = CONFIG.sprite_sheets;
-      UNIT_CONFIG = CONFIG.unit_config;
+  if (this.readyState == 4 && this.status == 200) {
 
-      var gameConfig = CONFIG.game_config;
-      SOUND_ON_OFF_BUTTON_X = gameConfig.sound_onoff_button_x;
-      SOUND_ON_OFF_BUTTON_Y = gameConfig.sound_onoff_button_y;
-      CLOSE_BUTTON_X = gameConfig.close_button_x;
-      CLOSE_BUTTON_Y = gameConfig.close_button_y;
-      MY_UNIT_PANEL_XY = gameConfig.my_unit_panel_xy;
-      ENEMY_UNIT_PANEL_XY = gameConfig.enemy_unit_panel_xy;
-      GAME = new Phaser.Game(gameConfig.game_width, gameConfig.game_height, Phaser.CANVAS, '',
-      {
-        preload: preload,
-        create: create,
-        update: update
-      }, false, false);
-   }
+    CONFIG = JSON.parse(this.responseText);
+    IMAGES = CONFIG.images;
+    SPRITE_SHEETS = CONFIG.sprite_sheets;
+    UNIT_CONFIG = CONFIG.unit_config;
+
+    var gameConfig = CONFIG.game_config;
+    SOUND_ON_OFF_BUTTON_X = gameConfig.sound_onoff_button_x;
+    SOUND_ON_OFF_BUTTON_Y = gameConfig.sound_onoff_button_y;
+    CLOSE_BUTTON_X = gameConfig.close_button_x;
+    CLOSE_BUTTON_Y = gameConfig.close_button_y;
+    MY_UNIT_PANEL_XY = gameConfig.my_unit_panel_xy;
+    ENEMY_UNIT_PANEL_XY = gameConfig.enemy_unit_panel_xy;
+    GAME = new Phaser.Game(gameConfig.game_width, gameConfig.game_height, Phaser.CANVAS, '',
+    {
+      preload: preload,
+      create: create,
+      update: update
+    }, false, false);
+    GAME.data = {
+      game_mode: 'NORMAL' // DEPLOY, NORMAL
+    };
+    GAME.func = func;
+    GAME.member = new Member();
+  }
 };
 request.open('GET', './data/data.json', true);
 request.send();
 
-var GAME_MODE = 'NORMAL'; // DEPLOY, NORMAL
 var MY_UNIT_NAME_ARRAY = ['axeman','swordman','swordman'];
 var MAX_MY_UNIT_COUNT = MY_UNIT_NAME_ARRAY.length;
 var ENEMIES_NAME_ARRAY = ['craw',null,null,null,'skel',null,null,null, 'craw'];
@@ -165,50 +171,23 @@ function create() {
   }
   sortUnitButton();
 
-  DEPLOY_MODE_BUTTON = GAME.add.button(360 + 50, 985, 'btn_member_0', null, this);
-  DEPLOY_MODE_BUTTON.anchor.set(0.5, 0.5);
-  DEPLOY_MODE_BUTTON.inputEnabled = true;
-  DEPLOY_MODE_BUTTON.events.onInputDown.add(function(me){
-    GAME.add.tween(me.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
-    if(GAME_MODE === 'NORMAL') {
-      changeGameMode('DEPLOY');
-    } else {
-      changeGameMode('NORMAL');
-    }
-  }, DEPLOY_MODE_BUTTON);
+  let props = {
+    game: GAME,
+    id: 'deploy_mode_button',
+    x: 410,
+    y: 985,
+    image_key: 'btn_member_0'
+  };
+  GAME.member.add(new BdButton(props));
 
-  BATTLE_START_BUTTON = GAME.add.button(360 + 50, 1122, 'btn_start', null, this);
-  BATTLE_START_BUTTON.anchor.set(0.5, 0.5);
-  BATTLE_START_BUTTON.inputEnabled = true;
-  BATTLE_START_BUTTON.events.onInputDown.add(function(me){
-    GAME.add.tween(me.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
-    if(DEPLOYED_MY_UNITS.length <= 0) {
-      GAME_ALL_MASK.alpha = 0.9;
-      GAME_ALL_MASK.inputEnabled = true;
-      GAME.world.bringToTop(GAME_ALL_MASK);
-      let warningMessage = GAME.add.sprite(105, 672, 'battle_warning_message');
-      GAME.time.events.add(1000, function() {
-        GAME_ALL_MASK.alpha = 0;
-        GAME_ALL_MASK.inputEnabled = false;
-        warningMessage.destroy();
-      }, this);
-      return;
-    }
-    CURRENT_TURN = 0;
-    for(var i = 0 ; i < DEPLOYED_MY_UNITS.length ; i++) {
-      TURN_ORDER[i] = DEPLOYED_MY_UNITS[i];
-    }
-    for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
-      TURN_ORDER.splice((i * 2) + 1, 0, DEPLOYED_ENEMIES[i]);
-    }
-    changeGameMode('WAIT');
-    ROUND = 1;
-    fsn.util.alertStartRound(ROUND);
-    GAME.time.events.add(2000, function() {
-      changeGameMode('BATTLE');
-    }, this);
-
-  }, BATTLE_START_BUTTON);
+  props = {
+    game: GAME,
+    id: 'battle_start_button',
+    x: 410,
+    y: 1122,
+    image_key: 'btn_start'
+  };
+  GAME.member.add(new BdButton(props));
 
   SMALL_TIP = GAME.add.sprite(266 + 50, 843, 'small_tip');
   var tween = GAME.add.tween(SMALL_TIP).to( { y:  SMALL_TIP.y - 10 }, 300, Phaser.Easing.Linear.None, false, 0, -1, true);
@@ -289,7 +268,91 @@ function create() {
 
   TUTORIAL_MOVIE = GAME.add.sprite(50, 383, 'tutorial_1');
   TUTORIAL_MOVIE.visible = false;
-  changeGameMode('PRESTART');
+  GAME.func.changeGameMode('PRESTART');
+}
+
+func.initForBattle = function() {
+  if(DEPLOYED_MY_UNITS.length <= 0) {
+    GAME_ALL_MASK.alpha = 0.9;
+    GAME_ALL_MASK.inputEnabled = true;
+    GAME.world.bringToTop(GAME_ALL_MASK);
+    let warningMessage = GAME.add.sprite(105, 672, 'battle_warning_message');
+    GAME.time.events.add(1000, function() {
+      GAME_ALL_MASK.alpha = 0;
+      GAME_ALL_MASK.inputEnabled = false;
+      warningMessage.destroy();
+    }, this);
+    return;
+  }
+  CURRENT_TURN = 0;
+  for(var i = 0 ; i < DEPLOYED_MY_UNITS.length ; i++) {
+    TURN_ORDER[i] = DEPLOYED_MY_UNITS[i];
+  }
+  for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
+    TURN_ORDER.splice((i * 2) + 1, 0, DEPLOYED_ENEMIES[i]);
+  }
+  GAME.func.changeGameMode('WAIT');
+  ROUND = 1;
+  fsn.util.alertStartRound(ROUND);
+  GAME.time.events.add(2000, function() {
+    GAME.func.changeGameMode('BATTLE');
+  }, this);
+}
+
+func.changeGameMode = function(mode) {
+  GAME.data.game_mode = mode;
+  if(mode === 'PRESTART') {
+    var panel = GAME.add.button(50, 0, 'start_tutorial_1');
+    var imageIndex = 1;
+    var timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
+      function(){
+        if(imageIndex ===1) {
+          imageIndex = 2;
+        } else {
+          imageIndex = 1;
+        }
+        panel.loadTexture('start_tutorial_' + imageIndex, 0);
+      }, this);
+    panel.inputEnabled = true;
+    panel.events.onInputDown.add(function(){
+      GAME.func.changeGameMode('NORMAL');
+      panel.destroy();
+      GAME.time.events.remove(timeEvent);
+    });
+  } else if(mode === 'DEPLOY') {
+    fsn.util.showMask();
+    SMALL_TIP.destroy();
+    DEPLOY_MODE_FOOTER.visible = true;
+    ACTIVE_PANEL.visible = true;
+    GAME.add.tween(ACTIVE_PANEL).to({alpha: 0.1}, 800, Phaser.Easing.Linear.None, true, 0, 5000, true);
+  } else if(GAME.data.game_mode === 'WAIT') {
+    fsn.util.hideMask();
+    SMALL_TIP.destroy();
+    DEPLOY_MODE_FOOTER.destroy();
+    ACTIVE_PANEL.destroy();
+    GAME.member.get('deploy_mode_button').destroy();
+    GAME.member.get('battle_start_button').destroy();
+    TUTORIAL_BUTTON.destroy();
+    for(var i = 0 ; i < DEPLOYED_MY_UNITS.length ; i++) {
+      DEPLOYED_MY_UNITS[i].flag.visible = false;
+      DEPLOYED_MY_UNITS[i].hpGrp.visible = true;
+      DEPLOYED_MY_UNITS[i].updateHpBar();
+    }
+    for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
+      DEPLOYED_ENEMIES[i].flag.visible = false;
+      DEPLOYED_ENEMIES[i].hpGrp.visible = true;
+    }
+    for(var i = 0 ; i < LEFT_UNIT_BOTTOM_PANELS.length ; i++) {
+      LEFT_UNIT_BOTTOM_PANELS[i].alpha = 0;
+    }
+  } else {
+    // NORMAL MODE
+    fsn.util.hideMask();
+    SMALL_TIP.visible = true;
+    DEPLOY_MODE_FOOTER.visible = false;
+    ACTIVE_PANEL.visible = false;
+  }
+  setUnitDeployButton();
 }
 
 function plyaTutorial() {
@@ -339,7 +402,7 @@ function createSelectablePanels() {
     panel.events.onInputOver.add(function(me){
       for(var i = 0 ; i < MY_UNITS.length ; i++) {
         if(MY_UNITS[i].isButtonSelected) {
-          if(GAME_MODE === 'DEPLOY') {
+          if(GAME.data.game_mode === 'DEPLOY') {
             me.alpha = 1;
             break;
           }
@@ -347,7 +410,7 @@ function createSelectablePanels() {
       }
     }, this);
     panel.events.onInputOut.add(function(me){
-      if(GAME_MODE === 'DEPLOY') {
+      if(GAME.data.game_mode === 'DEPLOY') {
         if(!me.data['unit']) {
           me.alpha = 0;
         }
@@ -355,7 +418,7 @@ function createSelectablePanels() {
     }, this);
     // button
     panel.events.onInputDown.add(function(panel){
-      if(GAME_MODE === 'DEPLOY') {
+      if(GAME.data.game_mode === 'DEPLOY') {
         deployMyUnit(panel);
       }
     }, this);
@@ -376,7 +439,8 @@ function deployMyUnit(panel) {
         DEPLOYED_MY_UNITS[MY_DEPLOYED_UNIT_COUNT] = MY_UNITS[i];
         MY_DEPLOYED_UNIT_COUNT++;
         panel.data['unit'] = MY_UNITS[i];
-        DEPLOY_MODE_BUTTON.loadTexture('btn_member_' + MY_DEPLOYED_UNIT_COUNT, 0);
+        let deployModeButton = GAME.member.get('deploy_mode_button');
+        deployModeButton.changeImage('btn_member_' + MY_DEPLOYED_UNIT_COUNT);
         MY_UNIT_POSITION[panel.data['index']] = MY_UNITS[i];
         MY_UNITS[i].updateFlag(MY_DEPLOYED_UNIT_COUNT);
         MY_UNITS[i].panelPositionIndex = panel.data['index'];
@@ -388,68 +452,12 @@ function deployMyUnit(panel) {
   }
 
   if(MY_DEPLOYED_UNIT_COUNT >= MAX_MY_UNIT_COUNT) {
-    changeGameMode('NORMAL');
+    GAME.func.changeGameMode('NORMAL');
   }
-}
-
-function changeGameMode(mode) {
-  GAME_MODE = mode;
-  if(mode === 'PRESTART') {
-    var panel = GAME.add.button(50, 0, 'start_tutorial_1');
-    var imageIndex = 1;
-    var timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
-      function(){
-        if(imageIndex ===1) {
-          imageIndex = 2;
-        } else {
-          imageIndex = 1;
-        }
-        panel.loadTexture('start_tutorial_' + imageIndex, 0);
-      }, this);
-    panel.inputEnabled = true;
-    panel.events.onInputDown.add(function(){
-      changeGameMode('NORMAL');
-      panel.destroy();
-      GAME.time.events.remove(timeEvent);
-    });
-  } else if(mode === 'DEPLOY') {
-    fsn.util.showMask();
-    SMALL_TIP.destroy();
-    DEPLOY_MODE_FOOTER.visible = true;
-    ACTIVE_PANEL.visible = true;
-    GAME.add.tween(ACTIVE_PANEL).to({alpha: 0.1}, 800, Phaser.Easing.Linear.None, true, 0, 5000, true);
-  } else if(GAME_MODE === 'WAIT') {
-    fsn.util.hideMask();
-    SMALL_TIP.destroy();
-    DEPLOY_MODE_FOOTER.destroy();
-    ACTIVE_PANEL.destroy();
-    DEPLOY_MODE_BUTTON.destroy();
-    BATTLE_START_BUTTON.destroy();
-    TUTORIAL_BUTTON.destroy();
-    for(var i = 0 ; i < DEPLOYED_MY_UNITS.length ; i++) {
-      DEPLOYED_MY_UNITS[i].flag.visible = false;
-      DEPLOYED_MY_UNITS[i].hpGrp.visible = true;
-      DEPLOYED_MY_UNITS[i].updateHpBar();
-    }
-    for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
-      DEPLOYED_ENEMIES[i].flag.visible = false;
-      DEPLOYED_ENEMIES[i].hpGrp.visible = true;
-    }
-    for(var i = 0 ; i < LEFT_UNIT_BOTTOM_PANELS.length ; i++) {
-      LEFT_UNIT_BOTTOM_PANELS[i].alpha = 0;
-    }
-  } else {
-    // NORMAL MODE
-    fsn.util.hideMask();
-    SMALL_TIP.visible = true;
-    DEPLOY_MODE_FOOTER.visible = false;
-    ACTIVE_PANEL.visible = false;
-  }
-  setUnitDeployButton();
 }
 
 function setUnitDeployButton() {
-  if(GAME_MODE === 'DEPLOY') {
+  if(GAME.data.game_mode === 'DEPLOY') {
     MY_UNITS.forEach(function(myUnit) {
       if(!myUnit.deployed) {
         myUnit.showUnitButton();
@@ -529,7 +537,7 @@ function createEnemies() {
 }
 
 function update(){
-  if(GAME_MODE === 'BATTLE') {
+  if(GAME.data.game_mode === 'BATTLE') {
     var currentTurnUnit = TURN_ORDER[CURRENT_TURN];
     if(!currentTurnUnit) {
       return;
@@ -560,19 +568,19 @@ function update(){
         return;
       }
 
-      GAME_MODE = 'WAIT';
+      GAME.data.game_mode = 'WAIT';
       ROUND++;
       GAME.time.events.add(500, function() {
         fsn.util.alertStartRound(ROUND);
 
         GAME.time.events.add(1000, function() {
           CURRENT_TURN = 0;
-          GAME_MODE = 'BATTLE';
+          GAME.data.game_mode = 'BATTLE';
         }, this);
 
       }, this);
       // game.paused = true;
-      // GAME_MODE = 'NORMAL';
+      // GAME.data.game_mode = 'NORMAL';
     }
   } else {
     if(MY_DEPLOYED_UNIT_COUNT >= MAX_MY_UNIT_COUNT) {
