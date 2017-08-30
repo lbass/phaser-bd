@@ -46,11 +46,16 @@ request.onreadystatechange = function() {
       game_mode: 'NORMAL', // DEPLOY, NORMAL
       my_units: [],
       left_unit_bottom_panels: [],
+      right_unit_bottom_panels: [],
       deployed_my_units: [],
       my_deployed_unit_count: 0,
       max_my_unit_count: MY_UNIT_NAME_ARRAY.length,
       deployed_my_units: [],
-      my_unit_position: [null,null,null,null,null,null,null,null,null]
+      deployed_enemies: [],
+      my_unit_position: [null,null,null,null,null,null,null,null,null],
+      enemy_unit_position: [null,null,null,null,null,null,null,null,null],
+      round: 0,
+      current_turn: 0
     };
     GAME.func = func;
     GAME.member = new Member();
@@ -59,18 +64,7 @@ request.onreadystatechange = function() {
 request.open('GET', './data/data.json', true);
 request.send();
 
-// var ENEMIES_NAME_ARRAY = [null,null,null,null,'skel',null,null,null,null];
-var ENEMY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
-var ROUND = 0;
-var CURRENT_TURN = 0;
-var LEFT_BATTLE_UNIT_PANEL = {};
-var RIGHT_BATTLE_UNIT_PANEL = {};
-var SKILL_TEXT = {};
-var DEPLOYED_ENEMIES = [];
-
 var TURN_ORDER = [];
-
-var RIGHT_UNIT_BOTTOM_PANELS = [];
 
 function preload() {
   for(var i = 0 ; i < IMAGES.length ; i++) {
@@ -123,9 +117,8 @@ function create() {
 
   for(var i = 0 ; i < 9 ; i++) {
     var position = ENEMY_UNIT_PANEL_XY[i];
-    var panel = this.game.add.sprite(position.x, position.y, 'right_battle_unit_panel');
-    panel.alpha = 0;
-    RIGHT_UNIT_BOTTOM_PANELS.push(panel);
+    var bdSprite = new BdSprite({ game: GAME, x: position.x, y: position.y, image_key: 'right_battle_unit_panel', id: 'right_unit_panel_' + index, default_alpha: 0});
+    GAME.data.right_unit_bottom_panels.push(bdSprite);
   }
 
   GAME.member.add(new BdSprite({ game: GAME, x: 50, y: 840, image_key: 'footer_ui_basic', id: 'normal_mode_footer'}));
@@ -211,16 +204,17 @@ func.initForBattle = function() {
     }, this);
     return;
   }
-  CURRENT_TURN = 0;
+  GAME.data.current_turn = 0;
   for(var i = 0 ; i < deployedMyUnits.length ; i++) {
     TURN_ORDER[i] = deployedMyUnits[i];
   }
-  for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
-    TURN_ORDER.splice((i * 2) + 1, 0, DEPLOYED_ENEMIES[i]);
+  let deployedEnemies = GAME.data.deployed_enemies;
+  for(var i = 0 ; i < deployedEnemies.length ; i++) {
+    TURN_ORDER.splice((i * 2) + 1, 0, deployedEnemies[i]);
   }
   GAME.func.changeGameMode('WAIT');
-  ROUND = 1;
-  GAME.func.alertStartRound(ROUND);
+  GAME.data.round = 1;
+  GAME.func.alertStartRound(GAME.data.round);
   GAME.time.events.add(2000, function() {
     GAME.func.changeGameMode('BATTLE');
   }, this);
@@ -268,9 +262,10 @@ func.changeGameMode = function(mode) {
       deployedMyUnits[i].hpGrp.visible = true;
       deployedMyUnits[i].updateHpBar();
     }
-    for(var i = 0 ; i < DEPLOYED_ENEMIES.length ; i++) {
-      DEPLOYED_ENEMIES[i].flag.visible = false;
-      DEPLOYED_ENEMIES[i].hpGrp.visible = true;
+    let deployedEnemies = GAME.data.deployed_enemies;
+    for(var i = 0 ; i < deployedEnemies.length ; i++) {
+      deployedEnemies[i].flag.visible = false;
+      deployedEnemies[i].hpGrp.visible = true;
     }
 
     let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
@@ -301,27 +296,29 @@ func.hideSkill = function() {
 
 func.showBattleUnitPanel = function(left, right) {
   let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
+  let rightUnitBottomPanels = GAME.data.right_unit_bottom_panels;
   if(left.constructor === Array) {
     for(var i = 0 ; i < left.length ; i++) {
-      leftUnitBottomPanels[left[i]].alpha = 1;
+      leftUnitBottomPanels[left[i]].setAlpha(1);
     }
   } else {
-    leftUnitBottomPanels[left].alpha = 1;
+    leftUnitBottomPanels[left].setAlpha(1);
   }
 
   if(right.constructor === Array) {
   } else {
-    RIGHT_UNIT_BOTTOM_PANELS[right].alpha = 1;
+    rightUnitBottomPanels[right].setAlpha(1);
   }
 }
 
 func.hideBattleUnitPanel = function() {
   let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
+  let rightUnitBottomPanels = GAME.data.right_unit_bottom_panels;
   for(var i = 0 ; i < leftUnitBottomPanels.length ; i++) {
-    leftUnitBottomPanels[i].alpha = 0;
+    leftUnitBottomPanels[i].setAlpha(0);
   }
-  for(var i = 0 ; i < RIGHT_UNIT_BOTTOM_PANELS.length ; i++) {
-    RIGHT_UNIT_BOTTOM_PANELS[i].alpha = 0;
+  for(var i = 0 ; i < rightUnitBottomPanels.length ; i++) {
+    rightUnitBottomPanels[i].setAlpha(0);
   }
 }
 
@@ -488,7 +485,7 @@ func.getAliveEnemies = function(type) {
   let resultList = new Array();
   let targetList = null;
   if(type === 'my') {
-    targetList = DEPLOYED_ENEMIES;
+    targetList = GAME.data.deployed_enemies;
   } else {
     targetList = GAME.data.deployed_my_units;
   }
@@ -551,6 +548,8 @@ function initUnitButton() {
 
 function createEnemies() {
   var enemyCount = 0;
+  let deployedEnemies = GAME.data.deployed_enemies;
+  let enemyUnitPosition = GAME.data.enemy_unit_position;
   for(var i = 0 ; i < ENEMIES_NAME_ARRAY.length ; i++) {
     var enemyName = ENEMIES_NAME_ARRAY[i];
     if(enemyName != null && enemyName !== '') {
@@ -569,28 +568,28 @@ function createEnemies() {
       enemyCount++;
       enemy.updateFlag(enemyCount);
       enemy.panelPositionIndex = i;
-      DEPLOYED_ENEMIES.push(enemy);
-      ENEMY_UNIT_POSITION[i] = enemy;
+      deployedEnemies.push(enemy);
+      enemyUnitPosition[i] = enemy;
     }
   }
 }
 
 function update(){
   if(GAME.data.game_mode === 'BATTLE') {
-    var currentTurnUnit = TURN_ORDER[CURRENT_TURN];
+    var currentTurnUnit = TURN_ORDER[GAME.data.current_turn];
     if(!currentTurnUnit) {
       return;
     }
 
     if(currentTurnUnit.isEndTurn || !currentTurnUnit.alive) {
-      CURRENT_TURN++;
+      GAME.data.current_turn++;
       if(currentTurnUnit.isEndTurn) {
         currentTurnUnit.initActionState();
       }
     } else {
       currentTurnUnit.update();
     }
-    if(CURRENT_TURN >= TURN_ORDER.length) {
+    if(GAME.data.current_turn >= TURN_ORDER.length) {
       var enemies = GAME.func.getAliveEnemies('my');
       var myUnits = GAME.func.getAliveEnemies('enemy');
       if(enemies.length <= 0) {
@@ -608,12 +607,12 @@ function update(){
       }
 
       GAME.data.game_mode = 'WAIT';
-      ROUND++;
+      GAME.data.round++;
       GAME.time.events.add(500, function() {
-        GAME.func.alertStartRound(ROUND);
+        GAME.func.alertStartRound(GAME.data.round);
 
         GAME.time.events.add(1000, function() {
-          CURRENT_TURN = 0;
+          GAME.data.current_turn = 0;
           GAME.data.game_mode = 'BATTLE';
         }, this);
 
@@ -640,12 +639,7 @@ function gameOver(type) {
   }, this);
   GAME.add.button(146, buttonY + 114, 'replay_btn', function(){
     GAME.world.removeAll();
-    ENEMY_UNIT_POSITION = [null,null,null,null,null,null,null,null,null ];
-    ROUND = 0;
-    CURRENT_TURN = 0;
-    RIGHT_UNIT_BOTTOM_PANELS = [];
-    SKILL_TEXT = {};
-    DEPLOYED_ENEMIES = [];
+    GAME.data.current_turn = 0;
     TURN_ORDER = [];
 
     GAME.state.restart();
