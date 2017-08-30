@@ -102,7 +102,7 @@ CommonUnit.prototype = {
   },
   startAction: function() {
     var me = this;
-    var enemyInfoList = fsn.util.getAliveEnemies(this.unitData.type);
+    var enemyInfoList = this.game.func.getAliveEnemies(this.unitData.type);
     if(enemyInfoList.length <= 0) {
       this.isEndAttack = true;
       this.completeAction();
@@ -124,21 +124,21 @@ CommonUnit.prototype = {
     var readDuration = 100;
     me.readyAttacking(readDuration);
     me.game.time.events.add(readDuration, function() {
-      fsn.util.showFadeOutMask(500);
-      fsn.util.playBattleStartEffect(me.unit.x - 360, me.unit.y - 300);
+      me.game.func.showFadeOutMask(500);
+      me.game.func.playBattleStartEffect(me.unit.x - 360, me.unit.y - 300);
     }, me);
 
     var attackDelay = 700;
     me.game.time.events.add(attackDelay, function() {
       if(me.unitData.type === 'my') {
-        fsn.util.showBattleUnitPanel(me.panelPositionIndex, targetPanel);
+        me.game.func.showBattleUnitPanel(me.panelPositionIndex, targetPanel);
       } else {
-        fsn.util.showBattleUnitPanel(targetPanel, me.panelPositionIndex);
+        me.game.func.showBattleUnitPanel(targetPanel, me.panelPositionIndex);
       }
     }, me);
 
     me.game.time.events.add(attackDelay, function() {
-      me.viewSkillName();
+      me.game.func.showSkill(me.unitData.skill);
     }, me);
 
     me.game.time.events.add(attackDelay + 200, function() {
@@ -201,16 +201,16 @@ CommonUnit.prototype = {
     var delay = 0;
     var yoyo = true;
     var repeat = 3;
-    fsn.util.showRedMask();
+    this.game.func.showRedMask();
     var tween = this.game.add.tween(this.game.camera).to({x: this.game.camera.x - 5}, duration, ease, autoStart, delay, repeat, yoyo);
     tween.onComplete.add(function() {
-      fsn.util.hideRedMask();
-    });
+      this.game.func.hideRedMask();
+    }, this);
   },
   completeAction: function() {
     this.isEndTargetAni = true;
-    fsn.util.hideBattleUnitPanel();
-    fsn.util.hideSkill();
+    this.game.func.hideBattleUnitPanel();
+    this.game.func.hideSkill();
   },
   readyAttacking: function(duration) {
   },
@@ -306,10 +306,10 @@ CommonUnit.prototype = {
   },
   deadUnit: function() {
     if(this.unitData.type === 'my') {
-      fsn.util.playKoAnimation(this.unit.x - 120, this.unit.y- 280);
+      this.game.func.playKoAnimation(this.unit.x - 120, this.unit.y- 280);
       this.unit.loadTexture('unit_dead_left', 0);
     } else {
-      fsn.util.playKoAnimation(this.unit.x - 120, this.unit.y - 280);
+      this.game.func.playKoAnimation(this.unit.x - 120, this.unit.y - 280);
       this.unit.loadTexture('unit_dead', 0);
     }
     this.alive = false;

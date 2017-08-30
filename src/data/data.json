@@ -56,7 +56,7 @@
     "craw": {
       "name": "craw",
       "hp":100,
-      "power":40,
+      "power":10,
       "armor":100,
       "agility":100,
       "unit_image": "craw",
@@ -187,10 +187,10 @@
   "game_config": {
       "game_width": 720,
       "game_height": 1230,
-      "sound_onoff_button_x": 580,
-      "sound_onoff_button_y": 20,
-      "close_button_x": 659,
-      "close_button_y": 20,
+      "sound_onoff_button_x": 610,
+      "sound_onoff_button_y": 50,
+      "close_button_x": 689,
+      "close_button_y": 50,
       "default_mute": true,
       "my_unit_panel_xy": [
             { "x": 105, "y": 333 }, { "x": 195, "y": 333 }, { "x": 285, "y": 333 },

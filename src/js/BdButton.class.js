@@ -19,6 +19,16 @@ class BdButton extends FsnButton {
         game.add.tween(button.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
         game.func.initForBattle();
         break;
+
+      case "tutorial_button":
+        game.func.plyaTutorial();
+        break;
+
+      case "popup_close":
+        this.destroy();
+        game.func.closeTutorial();
+        break;
+
     }
   }
 }

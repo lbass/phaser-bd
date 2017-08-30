@@ -76,7 +76,7 @@ MyUnit.prototype = {
   viewReadyEffect: function() {
   },
   readyAttacking: function(duration) {
-    fsn.util.showAttackReadyPannel(this.unit.x, this.unit.y, duration)
+    this.game.func.showAttackReadyPannel(this.unit.x - 48, this.unit.y - 2, duration)
   }
 };
 

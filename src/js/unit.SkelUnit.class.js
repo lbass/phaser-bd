@@ -18,7 +18,7 @@ SkelUnit.prototype = {
     var targets = [];
     var panelPosition = enemyInfoList[index].panelPositionIndex;
     var targetIndex = this.areaMap[panelPosition];
-    var enemyPanelPostions = fsn.util.getEnemyPanelPosition(this.unitData.type);
+    var enemyPanelPostions = this.game.data.my_unit_position;
 
     for(var i = 0 ; i < targetIndex.length ; i++) {
       var target = enemyPanelPostions[targetIndex[i]]
@@ -37,7 +37,7 @@ SkelUnit.prototype = {
       var firstTarget = targets[0];
       me.completeAction();
       me.takeDamage(500);
-      fsn.util.playBoombEffect(firstTarget.unit.x - 370 , firstTarget.unit.y - 280);
+      me.game.func.playBoomEffect(firstTarget.unit.x - 370 , firstTarget.unit.y - 280);
       for(var i = 0 ; i < targets.length ; i++) {
         var target = targets[i];
         target.unit.animations.play('attacked');
