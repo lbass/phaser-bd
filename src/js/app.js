@@ -1,47 +1,38 @@
 'use strict';
+import { BdButton, BdMask, BdSprite, CommonUnit, MyUnit, SkelUnit } from './bd'
+import { CloseButton, SoundButton, Member, Utils } from './fsnbase'
+
 let GAME = {};
 let func = {};
-let CONFIG = null;
-
-let GAME_WIDTH = 0;
-let GAME_HEIGHT = 0;
 let IS_MUTE;
-let SOUND_ON_OFF_BUTTON_X = 0;
-let SOUND_ON_OFF_BUTTON_Y = 0;
-let CLOSE_BUTTON_X = 0;
-let CLOSE_BUTTON_Y = 0;
-let MY_UNIT_PANEL_XY = [];
-let ENEMY_UNIT_PANEL_XY = [];
-let UNIT_CONFIG = {};
-let IMAGES = [];
-let SPRITE_SHEETS = [];
-
 const MY_UNIT_NAME_ARRAY = ['axeman','swordman','swordman'];
-const ENEMIES_NAME_ARRAY = ['craw',null,null,null,'skel',null,null,null, 'craw'];
+const ENEMIES_NAME_ARRAY = [null,null,null,null,'skel',null,null,null,null];
 
 // data preload
 let request = new XMLHttpRequest();
 request.onreadystatechange = function() {
   if (this.readyState == 4 && this.status == 200) {
-
-    CONFIG = JSON.parse(this.responseText);
-    IMAGES = CONFIG.images;
-    SPRITE_SHEETS = CONFIG.sprite_sheets;
-    UNIT_CONFIG = CONFIG.unit_config;
-
-    var gameConfig = CONFIG.game_config;
-    SOUND_ON_OFF_BUTTON_X = gameConfig.sound_onoff_button_x;
-    SOUND_ON_OFF_BUTTON_Y = gameConfig.sound_onoff_button_y;
-    CLOSE_BUTTON_X = gameConfig.close_button_x;
-    CLOSE_BUTTON_Y = gameConfig.close_button_y;
-    MY_UNIT_PANEL_XY = gameConfig.my_unit_panel_xy;
-    ENEMY_UNIT_PANEL_XY = gameConfig.enemy_unit_panel_xy;
+    let config = JSON.parse(this.responseText);
+    let gameConfig = config.game_config;
     GAME = new Phaser.Game(gameConfig.game_width, gameConfig.game_height, Phaser.CANVAS, '',
     {
-      preload: preload,
-      create: create,
-      update: update
+      preload: func.preload,
+      create: func.create,
+      update: func.update
     }, false, false);
+
+    GAME.const = {
+      sound_on_off_button_x: gameConfig.sound_onoff_button_x, // DEPLOY, NORMAL
+      sound_on_off_button_y: gameConfig.sound_onoff_button_y,
+      close_button_x:gameConfig.close_button_x,
+      close_button_y: gameConfig.close_button_y,
+      my_unit_panel_xy: gameConfig.my_unit_panel_xy,
+      enemy_unit_panel_xy: gameConfig.enemy_unit_panel_xy,
+      unit_config: config.unit_config,
+      images: config.images,
+      sprite_sheets: config.sprite_sheets
+    };
+
     GAME.data = {
       game_mode: 'NORMAL', // DEPLOY, NORMAL
       my_units: [],
@@ -55,29 +46,30 @@ request.onreadystatechange = function() {
       my_unit_position: [null,null,null,null,null,null,null,null,null],
       enemy_unit_position: [null,null,null,null,null,null,null,null,null],
       round: 0,
-      current_turn: 0
+      current_turn: 0,
+      turn_order: []
     };
     GAME.func = func;
     GAME.member = new Member();
   }
 };
-request.open('GET', './data/data.json', true);
+request.open('GET', './assets/data.json', true);
 request.send();
 
-var TURN_ORDER = [];
-
-function preload() {
-  for(var i = 0 ; i < IMAGES.length ; i++) {
-    let image = IMAGES[i];
+func.preload = function() {
+  let images = GAME.const.images;
+  for(let i = 0 ; i < images.length ; i++) {
+    let image = images[i];
     GAME.load.image(image.name, image.path);
   }
-  for(var i = 0 ; i < SPRITE_SHEETS.length ; i++) {
-    let sheet = SPRITE_SHEETS[i];
+  let spriteSheets = GAME.const.sprite_sheets;
+  for(let i = 0 ; i < spriteSheets.length ; i++) {
+    let sheet = spriteSheets[i];
     GAME.load.spritesheet(sheet.name, sheet.path, sheet.width, sheet.height, sheet.frame);
   }
 }
 
-function create() {
+func.create = function() {
   GAME.world.setBounds(0, 0, 820, 1230);
   GAME.physics.setBoundsToWorld();
   GAME.camera.x = 50;
@@ -97,27 +89,25 @@ function create() {
   }, this);
 
   GAME.member.add(new BdMask({ game: GAME, x: 0, y: 0, color: 0x000000, id: 'mask', default_alpha: 0.0}));
-  GAME.member.add(new BdSprite({game: GAME, x: 0, y: 0, image_key: 'attack_panel', id: 'attack_bottom_panel', default_alpha: 0}));
-
+  GAME.member.add(new BdSprite({game: GAME, x: 240, y: 498, image_key: 'attack_panel', id: 'attack_bottom_panel', default_alpha: 0}));
   GAME.member.add(new BdSprite({ game: GAME, x: 60, y: 332, image_key: 'active_panel', id: 'active_panel', visible: false}));
   GAME.member.get('active_panel').startTween({alpha: 0.1}, 800, 0, 5000);
 
-  for(var i = 0 ; i < 9 ; i++) {
-    var position = MY_UNIT_PANEL_XY[i];
-    var index = i;
-    var bdSprite = new BdSprite({ game: GAME, x: position.x, y: position.y, image_key: 'panel_selected', id: 'panel_selected_' + index, default_alpha: 0});
+  for(let i = 0 ; i < GAME.const.my_unit_panel_xy.length ; i++) {
+    let position = GAME.const.my_unit_panel_xy[i];
+    let index = i;
+    let bdSprite = new BdSprite({ game: GAME, x: position.x, y: position.y, image_key: 'panel_selected', id: 'panel_selected_' + index, default_alpha: 0});
     GAME.member.add(bdSprite);
     bdSprite.changeInputEnableState(true);
-    bdSprite.setData({
-      'unit': null,
-      'index': index
-    });
+    bdSprite.setData('unit', null);
+    bdSprite.setData('index', index);
     GAME.data.left_unit_bottom_panels.push(bdSprite);
   }
 
-  for(var i = 0 ; i < 9 ; i++) {
-    var position = ENEMY_UNIT_PANEL_XY[i];
-    var bdSprite = new BdSprite({ game: GAME, x: position.x, y: position.y, image_key: 'right_battle_unit_panel', id: 'right_unit_panel_' + index, default_alpha: 0});
+  for(let i = 0 ; i < GAME.const.enemy_unit_panel_xy.length ; i++) {
+    let index = i;
+    let position = GAME.const.enemy_unit_panel_xy[i];
+    let bdSprite = new BdSprite({ game: GAME, x: position.x, y: position.y, image_key: 'right_battle_unit_panel', id: 'right_unit_panel_' + index, default_alpha: 0});
     GAME.data.right_unit_bottom_panels.push(bdSprite);
   }
 
@@ -129,17 +119,18 @@ function create() {
   props = { game: GAME, x: 0, y: 0, image_key: 'boomb', id: 'boom_effect', visible: false, animations: { 'explosion' : { data: [0,1,2,3,4,5,6,7], is_loop: false } }};
   GAME.member.add(new BdSprite(props));
 
-  for(var i = 0 ; i < MY_UNIT_NAME_ARRAY.length ; i++) {
-    var properties = {
+  for(let i = 0 ; i < MY_UNIT_NAME_ARRAY.length ; i++) {
+    let index = i;
+    let properties = {
       game: GAME,
       position: null,
-      unitData: UNIT_CONFIG[MY_UNIT_NAME_ARRAY[i]],
-      buttonClickHandler: initUnitButton
+      unitData: GAME.const.unit_config[MY_UNIT_NAME_ARRAY[i]],
+      id: index,
+      buttonClickHandler: GAME.func.initUnitButton
     };
-    var unit = new MyUnit(properties);
-    GAME.data.my_units.push(unit);
+    GAME.data.my_units.push(new MyUnit(properties));
   }
-  sortUnitButton();
+  GAME.func.sortUnitButton();
 
   GAME.member.add(new BdButton({ game: GAME, x: 410, y: 985, image_key: 'btn_member_0', id: 'deploy_mode_button'}));
   GAME.member.add(new BdButton({ game: GAME, x: 410, y: 1122, image_key: 'btn_start', id: 'battle_start_button'}));
@@ -150,16 +141,16 @@ function create() {
   smallTip.startTween({ y: smallTipPosition.y - 10 }, 300, 0, -1);
 
   GAME.sound.mute = IS_MUTE;
-  GAME.member.add(new SoundButton({ game: GAME, x: SOUND_ON_OFF_BUTTON_X, y: SOUND_ON_OFF_BUTTON_Y}));
-  GAME.member.add(new CloseButton({ game: GAME, x: CLOSE_BUTTON_X, y: CLOSE_BUTTON_Y}));
+  GAME.member.add(new SoundButton({ game: GAME, x: GAME.const.sound_on_off_button_x, y: GAME.const.sound_on_off_button_y }));
+  GAME.member.add(new CloseButton({ game: GAME, x: GAME.const.close_button_x, y: GAME.const.close_button_y }));
 
-  createEnemies();
+  GAME.func.createEnemies();
 
   GAME.member.add(new BdSprite({ game: GAME, x: 116, y: 327, image_key: 'round_1', id: 'display_round', default_alpha: 0}));
   GAME.member.add(new BdSprite({ game: GAME, x: 50, y: 755, image_key: 'bg_round_1', id: 'bg_round', visible: false}));
   GAME.member.add(new BdSprite({ game: GAME, x: 346, y: 1003, image_key: 'speedX2', id: 'speed_sprite', visible: false, animations: { 'run' : { data: [0,1,2,3,4,5,6], is_loop: true }}}));
 
-  var koAniData = [0,1,2,3,4,5,6];
+  let koAniData = [0,1,2,3,4,5,6];
   props = {
     game: GAME,
     x: 0,
@@ -205,12 +196,13 @@ func.initForBattle = function() {
     return;
   }
   GAME.data.current_turn = 0;
-  for(var i = 0 ; i < deployedMyUnits.length ; i++) {
-    TURN_ORDER[i] = deployedMyUnits[i];
+  let turnOrder = GAME.data.turn_order;
+  for(let i = 0 ; i < deployedMyUnits.length ; i++) {
+    turnOrder[i] = deployedMyUnits[i];
   }
   let deployedEnemies = GAME.data.deployed_enemies;
-  for(var i = 0 ; i < deployedEnemies.length ; i++) {
-    TURN_ORDER.splice((i * 2) + 1, 0, deployedEnemies[i]);
+  for(let i = 0 ; i < deployedEnemies.length ; i++) {
+    turnOrder.splice((i * 2) + 1, 0, deployedEnemies[i]);
   }
   GAME.func.changeGameMode('WAIT');
   GAME.data.round = 1;
@@ -223,23 +215,21 @@ func.initForBattle = function() {
 func.changeGameMode = function(mode) {
   GAME.data.game_mode = mode;
   if(mode === 'PRESTART') {
-    var panel = GAME.add.button(50, 0, 'start_tutorial_1');
-    var imageIndex = 1;
-    var timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
+    let startTuto = new BdSprite({ game: GAME, x: 50, y: 0, image_key: 'start_tutorial_1', id: 'start_tutorial'});
+    startTuto.changeInputEnableState(true);
+    let imageIndex = 1;
+    let timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
       function(){
-        if(imageIndex ===1) {
-          imageIndex = 2;
-        } else {
+        if(imageIndex === 3) {
           imageIndex = 1;
+        } else {
+          imageIndex++;
         }
-        panel.loadTexture('start_tutorial_' + imageIndex, 0);
+        startTuto.changeImage('start_tutorial_' + imageIndex);
       }, this);
-    panel.inputEnabled = true;
-    panel.events.onInputDown.add(function(){
-      GAME.func.changeGameMode('NORMAL');
-      panel.destroy();
-      GAME.time.events.remove(timeEvent);
-    });
+    timeEvent.o_id = 'start_tutorial_event';
+    GAME.member.add(timeEvent);
+
   } else if(mode === 'DEPLOY') {
     func.showMask();
     let smallTip = GAME.member.get('small_tip');
@@ -257,19 +247,16 @@ func.changeGameMode = function(mode) {
     GAME.member.get('tutorial_button').destroy();
 
     let deployedMyUnits = GAME.data.deployed_my_units;
-    for(var i = 0 ; i < deployedMyUnits.length ; i++) {
-      deployedMyUnits[i].flag.visible = false;
-      deployedMyUnits[i].hpGrp.visible = true;
-      deployedMyUnits[i].updateHpBar();
+    for(let i = 0 ; i < deployedMyUnits.length ; i++) {
+      deployedMyUnits[i].readyToBattle();
     }
     let deployedEnemies = GAME.data.deployed_enemies;
-    for(var i = 0 ; i < deployedEnemies.length ; i++) {
-      deployedEnemies[i].flag.visible = false;
-      deployedEnemies[i].hpGrp.visible = true;
+    for(let i = 0 ; i < deployedEnemies.length ; i++) {
+      deployedEnemies[i].readyToBattle();
     }
 
     let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
-    for(var i = 0 ; i < leftUnitBottomPanels.length ; i++) {
+    for(let i = 0 ; i < leftUnitBottomPanels.length ; i++) {
       leftUnitBottomPanels[i].setAlpha(0);
     }
   } else if(mode === 'BATTLE'){
@@ -280,17 +267,17 @@ func.changeGameMode = function(mode) {
     GAME.member.get('deploy_mode_footer').changeDisplayState(false);
     GAME.member.get('active_panel').changeDisplayState(false);
   }
-  setUnitDeployButton();
+  func.setUnitDeployButton();
 }
 
 func.showSkill = function(skillName) {
-  var skillText = GAME.member.get('skill_text');
+  let skillText = GAME.member.get('skill_text');
   skillText.changeImage(skillName);
   skillText.changeDisplayState(true);
 }
 
 func.hideSkill = function() {
-  var skillText = GAME.member.get('skill_text');
+  let skillText = GAME.member.get('skill_text');
   skillText.changeDisplayState(false);
 }
 
@@ -298,7 +285,7 @@ func.showBattleUnitPanel = function(left, right) {
   let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
   let rightUnitBottomPanels = GAME.data.right_unit_bottom_panels;
   if(left.constructor === Array) {
-    for(var i = 0 ; i < left.length ; i++) {
+    for(let i = 0 ; i < left.length ; i++) {
       leftUnitBottomPanels[left[i]].setAlpha(1);
     }
   } else {
@@ -314,41 +301,58 @@ func.showBattleUnitPanel = function(left, right) {
 func.hideBattleUnitPanel = function() {
   let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
   let rightUnitBottomPanels = GAME.data.right_unit_bottom_panels;
-  for(var i = 0 ; i < leftUnitBottomPanels.length ; i++) {
+  for(let i = 0 ; i < leftUnitBottomPanels.length ; i++) {
     leftUnitBottomPanels[i].setAlpha(0);
   }
-  for(var i = 0 ; i < rightUnitBottomPanels.length ; i++) {
+  for(let i = 0 ; i < rightUnitBottomPanels.length ; i++) {
     rightUnitBottomPanels[i].setAlpha(0);
   }
 }
 
+func.resetData = function() {
+  GAME.data = {
+    game_mode: 'NORMAL', // DEPLOY, NORMAL
+    my_units: [],
+    left_unit_bottom_panels: [],
+    right_unit_bottom_panels: [],
+    deployed_my_units: [],
+    my_deployed_unit_count: 0,
+    max_my_unit_count: MY_UNIT_NAME_ARRAY.length,
+    deployed_my_units: [],
+    deployed_enemies: [],
+    my_unit_position: [null,null,null,null,null,null,null,null,null],
+    enemy_unit_position: [null,null,null,null,null,null,null,null,null],
+    round: 0,
+    current_turn: 0,
+    turn_order: []
+  };
+}
+
 func.plyaTutorial = function() {
-  var loopCount = 0;
-  var imageIndex = 1;
+  let popupClose = new BdButton({ game: GAME, x: 675, y: 333, image_key: 'popup_close', id: 'popup_close'})
   let allMask = GAME.member.get('all_mask');
   let tutorialMovie = GAME.member.get('tutorial_movie');
 
-  GAME.member.add(new BdButton({ game: GAME, x: 675, y: 333, image_key: 'popup_close', id: 'popup_close'}));
-  let popupClose = GAME.member.get('popup_close');
-
   allMask.setAlpha(0.9);
   allMask.changeInputEnableState(true);
-  tutorialMovie.changeDisplayState(true);
-
   allMask.bringToTop();
+
+  tutorialMovie.changeDisplayState(true);
   tutorialMovie.bringToTop();
   popupClose.bringToTop();
 
-  var timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 3, function(){
-    loopCount++;
-    if(loopCount > 4) {
-      tutorialMovie.changeImage('tutorial_' + imageIndex);
-      imageIndex++;
-      if(imageIndex >= 22) {
-        GAME.time.events.remove(timeEvent);
+  let imageIndex = 1;
+  let timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
+    function() {
+      if(imageIndex === 2) {
+        imageIndex = 1;
+      } else {
+        imageIndex++;
       }
-    }
-  }, this);
+      tutorialMovie.changeImage('tutorial_' + imageIndex);
+    }, this);
+    timeEvent.o_id = 'tutorial_event';
+    GAME.member.add(timeEvent);
 }
 
 func.closeTutorial = function() {
@@ -360,9 +364,9 @@ func.closeTutorial = function() {
 }
 
 func.playKoAnimation = function(x, y) {
-  var sprite1 = GAME.member.get('ko_sprite_1');
-  var sprite2 = GAME.member.get('ko_sprite_2');
-  var sprite3 = GAME.member.get('ko_sprite_3');
+  let sprite1 = GAME.member.get('ko_sprite_1');
+  let sprite2 = GAME.member.get('ko_sprite_2');
+  let sprite3 = GAME.member.get('ko_sprite_3');
   if(!sprite1.getDisplayState()) {
     sprite1.bringToTop();
     sprite1.changeDisplayState(true);
@@ -395,9 +399,9 @@ func.hideMask = function() {
 }
 
 func.showFadeOutMask= function(duration) {
-  var mask = GAME.member.get('mask');
-  var alpha = 0.8;
-  var delay = 0;
+  let mask = GAME.member.get('mask');
+  let alpha = 0.8;
+  let delay = 0;
   mask.fadeIn(alpha, duration, delay);
 }
 
@@ -410,7 +414,7 @@ func.hideRedMask = function() {
 }
 
 func.playBoomEffect = function(x, y) {
-  var bombEffect = GAME.member.get('boom_effect');
+  let bombEffect = GAME.member.get('boom_effect');
   bombEffect.bringToTop();
   bombEffect.changeDisplayState(true);
   bombEffect.setPosition(x, y);
@@ -418,7 +422,7 @@ func.playBoomEffect = function(x, y) {
 }
 
 func.playBattleStartEffect = function(x, y) {
-  var startEffect = GAME.member.get('start_effect');
+  let startEffect = GAME.member.get('start_effect');
   startEffect.changeDisplayState(true);
   startEffect.setPosition(x, y);
   startEffect.playAnimation('battleEffect', 20);
@@ -428,7 +432,7 @@ func.hideAttackReadyPannel = function() {
   GAME.member.get('attack_bottom_panel').changeDisplayState(false);
 }
 func.showAttackReadyPannel = function(x, y, duration) {
-  var attackBottomPanel = GAME.member.get('attack_bottom_panel');
+  let attackBottomPanel = GAME.member.get('attack_bottom_panel');
   attackBottomPanel.changeDisplayState(true);
   attackBottomPanel.setPosition(x, y);
   attackBottomPanel.startTween({alpha: 1}, duration, 0, 0);
@@ -457,19 +461,16 @@ func.deployUnit = function(x, y, panelIndex) {
   let myUnitPosition = GAME.data.my_unit_position;
   let myDeployedUnitCount = GAME.data.my_deployed_unit_count;
   let maxMyUnitCount = GAME.data.max_my_unit_count;
-  for(var i = 0 ; i < myUnits.length ; i++) {
+  for(let i = 0 ; i < myUnits.length ; i++) {
     let unit = myUnits[i];
     if(unit.isButtonSelected) {
-      unit.deployUnit(x, y);
       result = unit;
       deployedMyUnits[myDeployedUnitCount] = unit;
       myDeployedUnitCount++;
       GAME.data.my_deployed_unit_count = myDeployedUnitCount;
       myUnitPosition[panelIndex] = unit;
-      unit.updateFlag(myDeployedUnitCount);
-      unit.panelPositionIndex = panelIndex;
-      sortUnit();
-      sortUnitButton();
+
+      unit.deployUnit(x, y, panelIndex, myDeployedUnitCount);
       let deployModeButton = GAME.member.get('deploy_mode_button');
       deployModeButton.changeImage('btn_member_' + myDeployedUnitCount);
       break;
@@ -477,6 +478,9 @@ func.deployUnit = function(x, y, panelIndex) {
   }
   if(myDeployedUnitCount >= maxMyUnitCount) {
     GAME.func.changeGameMode('NORMAL');
+  }
+  if(myDeployedUnitCount === 1) {
+    GAME.member.get('battle_start_button').changeImage('btn_active_start');
   }
   return result;
 }
@@ -489,15 +493,20 @@ func.getAliveEnemies = function(type) {
   } else {
     targetList = GAME.data.deployed_my_units;
   }
-  for(var i = 0 ; i < targetList.length; i++) {
-    if(targetList[i].alive) {
+  for(let i = 0 ; i < targetList.length; i++) {
+    if(targetList[i].isAlive()) {
       resultList.push(targetList[i]);
     }
   }
   return resultList;
 }
 
-function setUnitDeployButton() {
+func.hitEffect = function() {
+  GAME.func.showRedMask();
+  Utils.shakingShaking(GAME, 30, 3, GAME.func.hideRedMask);
+}
+
+func.setUnitDeployButton = function() {
   let myUnits = GAME.data.my_units;
   if(GAME.data.game_mode === 'DEPLOY') {
     myUnits.forEach(function(myUnit) {
@@ -512,24 +521,24 @@ function setUnitDeployButton() {
   }
 }
 
-function sortUnit() {
+func.sortUnit = function() {
   let leftUnitBottomPanels = GAME.data.left_unit_bottom_panels;
-  for(var i = 0 ; i < leftUnitBottomPanels.length ; i++) {
-    var panle = leftUnitBottomPanels[i];
-    var unit = panle.data['unit'];
+  for(let i = 0 ; i < leftUnitBottomPanels.length ; i++) {
+    let panle = leftUnitBottomPanels[i];
+    let unit = panle.getData('unit');
     if(unit) {
       unit.updateZindex();
     }
   }
 }
 
-function sortUnitButton() {
-  var firstX = 44 + 50;
-  var firstY = 798;
-  var index = 0;
+func.sortUnitButton = function() {
+  let firstX = 44 + 50;
+  let firstY = 798;
+  let index = 0;
   let myUnits = GAME.data.my_units;
-  for(var i = 0 ; i < myUnits.length ; i++) {
-    var unit = myUnits[i];
+  for(let i = 0 ; i < myUnits.length ; i++) {
+    let unit = myUnits[i];
     if(!unit.deployed) {
       unit.moveButtonPosition(firstX + (index * 130), firstY);
       index++;
@@ -537,71 +546,71 @@ function sortUnitButton() {
   }
 }
 
-function initUnitButton() {
+func.initUnitButton = function() {
   let myUnits = GAME.data.my_units;
-  for(var i = 0 ; i < myUnits.length; i++) {
+  for(let i = 0 ; i < myUnits.length; i++) {
     if(myUnits[i].isButtonSelected) {
       myUnits[i].deselectUnitButton();
     }
   }
 }
 
-function createEnemies() {
-  var enemyCount = 0;
+func.createEnemies = function() {
+  let enemyCount = 0;
   let deployedEnemies = GAME.data.deployed_enemies;
   let enemyUnitPosition = GAME.data.enemy_unit_position;
-  for(var i = 0 ; i < ENEMIES_NAME_ARRAY.length ; i++) {
-    var enemyName = ENEMIES_NAME_ARRAY[i];
+  let enemyUnitPanelXY = GAME.const.enemy_unit_panel_xy;
+  for(let i = 0 ; i < ENEMIES_NAME_ARRAY.length ; i++) {
+    let enemyName = ENEMIES_NAME_ARRAY[i];
+    let index = i;
     if(enemyName != null && enemyName !== '') {
-      var unitData = UNIT_CONFIG[ENEMIES_NAME_ARRAY[i]];
-      var properties = {
+      let unitData = GAME.const.unit_config[ENEMIES_NAME_ARRAY[i]];
+      let properties = {
         game: GAME,
         unitData: unitData,
-        position: ENEMY_UNIT_PANEL_XY[i]
+        id: index,
+        position: enemyUnitPanelXY[i]
       };
-      var enemy = {};
+      let enemy = {};
       if(unitData.name === "skel") {
         enemy = new SkelUnit(properties);
       } else {
         enemy = new CommonUnit(properties);
       }
       enemyCount++;
-      enemy.updateFlag(enemyCount);
-      enemy.panelPositionIndex = i;
+      enemy.initEnemyUnit(enemyCount, i);
       deployedEnemies.push(enemy);
       enemyUnitPosition[i] = enemy;
     }
   }
 }
 
-function update(){
+func.update = function() {
   if(GAME.data.game_mode === 'BATTLE') {
-    var currentTurnUnit = TURN_ORDER[GAME.data.current_turn];
+    let currentTurnUnit = GAME.data.turn_order[GAME.data.current_turn];
     if(!currentTurnUnit) {
       return;
     }
 
-    if(currentTurnUnit.isEndTurn || !currentTurnUnit.alive) {
+    let isEndTurn = currentTurnUnit.isEndAction() || !(currentTurnUnit.isAlive());
+    if(isEndTurn) {
       GAME.data.current_turn++;
-      if(currentTurnUnit.isEndTurn) {
-        currentTurnUnit.initActionState();
-      }
     } else {
       currentTurnUnit.update();
     }
-    if(GAME.data.current_turn >= TURN_ORDER.length) {
-      var enemies = GAME.func.getAliveEnemies('my');
-      var myUnits = GAME.func.getAliveEnemies('enemy');
+    if(GAME.data.current_turn >= GAME.data.turn_order.length) {
+      let enemies = GAME.func.getAliveEnemies('my');
+      let myUnits = GAME.func.getAliveEnemies('enemy');
       if(enemies.length <= 0) {
         GAME.time.events.add(1000, function() {
-          gameOver('WIN');
+          GAME.func.gameOver('WIN');
         }, this);
         return;
       }
 
       if(myUnits.length <= 0) {
         GAME.time.events.add(1000, function() {
-          gameOver('LOSE');
+          GAME.func.gameOver('LOSE');
         }, this);
         return;
       }
@@ -617,32 +626,23 @@ function update(){
         }, this);
 
       }, this);
-      // game.paused = true;
-      // GAME.data.game_mode = 'NORMAL';
     }
   }
 }
 
-function gameOver(type) {
-  var pop = null;
+func.gameOver = function(type) {
+  let pop = null;
   let allMask = GAME.member.get('all_mask');
+  allMask.bringToTop();
   allMask.setAlpha(0.9);
   if(type === 'WIN') {
-    pop = GAME.add.sprite(86, 212, 'win_pop');
+    new BdSprite({game: GAME, x: 86,y: 212,image_key: 'win_pop'});
   } else {
-    func.showMask();
-    pop = GAME.add.sprite(86, 212, 'lose_pop');
+    new BdSprite({game: GAME, x: 86,y: 212,image_key: 'lose_pop'});
   }
-  var buttonY = 790;
-  GAME.add.button(146, buttonY, 'continue_btn', function(){
-    alert('스토어로 이동합니다.');
-  }, this);
-  GAME.add.button(146, buttonY + 114, 'replay_btn', function(){
-    GAME.world.removeAll();
-    GAME.data.current_turn = 0;
-    TURN_ORDER = [];
+  let buttonY = 842;
+  new BdButton({game: GAME, x: 410, y: buttonY, image_key: 'continue_btn', id: 'continue_btn'});
+  new BdButton({game: GAME, x: 410, y: buttonY + 114, image_key: 'replay_btn', id: 'replay_btn'});
 
-    GAME.state.restart();
-  }, this);
   GAME.member.get('speed_sprite').changeDisplayState(false);
 }
