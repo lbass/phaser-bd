@@ -1,5 +1,7 @@
 'use strict'
 import CommonUnit from './CommonUnit';
+import BdButton from './BdButton';
+import BdSprite from './BdSprite';
 
 class MyUnit extends CommonUnit {
   constructor(props) {
@@ -10,21 +12,9 @@ class MyUnit extends CommonUnit {
     this._MOVE_PATH_01_Y = 0
 
     this.deployed = false;
-    this.isButtonSelected = false;
-    let unitButton = this.game.add.button(44, 798, this.unitData.icon_image, null, this);
-    let unitButtonEffect = this.game.add.sprite(36, 790, 'icon_selected');
-    unitButton.visible = false;
-    unitButtonEffect.visible = false;
-    unitButton.inputEnabled = true;
-    unitButton.onInputDown.add(function() {
-      props.buttonClickHandler();
-      this.isButtonSelected = true;
-      this.unitButtonEffect.visible = true;
-    }, this);
-
-    this.unitButton = unitButton;
-    this.unitButtonEffect = unitButtonEffect;
-
+    this.unit_button = new BdButton({game: this.game, x:100, y: 789, image_key: this.unitData.icon_image, visible: false, id: 'my_unit_button_' + this.id});
+    this.unit_button.setData('is_selected', false);
+    this.unit_button_effect = new BdSprite({game: this.game, x:44, y: 789, image_key: 'icon_selected', visible: false});
     this.unit_body.changeDisplayState(false);
   }
 
@@ -39,36 +29,45 @@ class MyUnit extends CommonUnit {
       this.unit_body.playAnimation('selected', 15);
       let playCount = 0;
       this.deployed = true;
-      this.unitButton.visible = false;
-      this.unitButtonEffect.visible = false;
-      this.isButtonSelected = false;
+      this.unit_button.changeDisplayState(false);
+      this.unit_button_effect.changeDisplayState(false);
+      this.unit_button.setData('is_selected', false);
       return true;
     }
     return false;
   }
 
   getUnitButton() {
-    return this.unitButton;
+    return this.unit_button;
   }
 
   showUnitButton() {
-    this.unitButton.visible = true;
+    this.unit_button.changeDisplayState(true);
+  }
+
+  isButtonSelected() {
+    return this.unit_button.getData('is_selected');
   }
 
   hideUnitButton() {
-    this.unitButton.visible = false;
-    this.unitButtonEffect.visible = false;
+    this.unit_button.changeDisplayState(false);
+    this.unit_button_effect.changeDisplayState(false);
   }
 
   deselectUnitButton() {
-    this.isButtonSelected = false;
-    this.unitButtonEffect.visible = false;
+    this.unit_button.setData('is_selected', false);
+    this.unit_button_effect.changeDisplayState(false);
+  }
+
+  selectUnitButton() {
+    this.unit_button_effect.changeDisplayState(true);
   }
 
   moveButtonPosition(x, y) {
-    this.unitButton.reset(x, y);
-    this.unitButtonEffect.reset(x - 8, y - 8);
-    this.unitButtonEffect.visible = false;
+    this.unit_button.setPosition(x, y);
+    this.unit_button_effect.setPosition(x - 65, y - 65);
+    // this.unit_button.changeDisplayState(false);
+    this.unit_button_effect.changeDisplayState(false);
   }
 
   updateHp() {

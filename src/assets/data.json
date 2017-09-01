@@ -158,7 +158,14 @@
     { "name": "start_tutorial_2", "path": "./assets/new_tuto_2.jpg" },
     { "name": "start_tutorial_3", "path": "./assets/new_tuto_3.jpg" },
     { "name": "popup_close", "path": "./assets/tutorial/close.png" },
-    { "name": "battle_warning_message", "path": "./assets/notice_1.png" }
+    { "name": "battle_warning_message", "path": "./assets/notice_1.png" },
+    { "name": "click_hand_1", "path": "./assets/tutorial/click_1.png" },
+    { "name": "click_hand_2", "path": "./assets/tutorial/click_2.png" },
+    { "name": "tuto_text_1", "path": "./assets/tutorial/tuto_text_1.png" },
+    { "name": "tuto_text_2", "path": "./assets/tutorial/tuto_text_2.png" },
+    { "name": "tuto_text_3", "path": "./assets/tutorial/tuto_text_3.png" },
+    { "name": "tuto_text_4", "path": "./assets/tutorial/tuto_text_4.png" },
+    { "name": "tuto_all_red", "path": "./assets/tutorial/all_red_pan.png" }
   ],
   "sprite_sheets": [
     { "name": "axeman", "path": "./assets/unit/axeman.png", "width": 210, "height": 210, "frame": 48 },
@@ -168,7 +175,10 @@
     { "name": "battleStart", "path": "./assets/effect/battle_start.png", "width": 720, "height": 600, "frame": 11 },
     { "name": "boomb", "path": "./assets/effect/boomb.png", "width": 720, "height": 600, "frame": 8 },
     { "name": "speedX2", "path": "./assets/round/round.png", "width": 127, "height": 137, "frame": 7 },
-    { "name": "ko", "path": "./assets/ko_dead/ko.png", "width": 250, "height": 450, "frame": 6 }
+    { "name": "ko", "path": "./assets/ko_dead/ko.png", "width": 250, "height": 450, "frame": 6 },
+    { "name": "btn_select_animation", "path": "./assets/tutorial/select_ani.png", "width": 128, "height": 129, "frame": 35 },
+    { "name": "tutorial_deploy_btn", "path": "./assets/tutorial/tutorial_btn_1.png", "width": 634, "height": 126, "frame": 35 },
+    { "name": "tutorial_start_btn", "path": "./assets/tutorial/tutorial_btn_2.png", "width": 633, "height": 117, "frame": 21 }
   ],
   "game_config": {
       "game_width": 720,

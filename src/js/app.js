@@ -47,7 +47,8 @@ request.onreadystatechange = function() {
       enemy_unit_position: [null,null,null,null,null,null,null,null,null],
       round: 0,
       current_turn: 0,
-      turn_order: []
+      turn_order: [],
+      tutorial_step: 0
     };
     GAME.func = func;
     GAME.member = new Member();
@@ -125,8 +126,7 @@ func.create = function() {
       game: GAME,
       position: null,
       unitData: GAME.const.unit_config[MY_UNIT_NAME_ARRAY[i]],
-      id: index,
-      buttonClickHandler: GAME.func.initUnitButton
+      id: index
     };
     GAME.data.my_units.push(new MyUnit(properties));
   }
@@ -134,11 +134,6 @@ func.create = function() {
 
   GAME.member.add(new BdButton({ game: GAME, x: 410, y: 985, image_key: 'btn_member_0', id: 'deploy_mode_button'}));
   GAME.member.add(new BdButton({ game: GAME, x: 410, y: 1122, image_key: 'btn_start', id: 'battle_start_button'}));
-
-  GAME.member.add(new BdSprite({ game: GAME, x: 316, y: 843, image_key: 'small_tip', id: 'small_tip'}));
-  let smallTip = GAME.member.get('small_tip');
-  let smallTipPosition = smallTip.getPosition();
-  smallTip.startTween({ y: smallTipPosition.y - 10 }, 300, 0, -1);
 
   GAME.sound.mute = IS_MUTE;
   GAME.member.add(new SoundButton({ game: GAME, x: GAME.const.sound_on_off_button_x, y: GAME.const.sound_on_off_button_y }));
@@ -175,7 +170,7 @@ func.create = function() {
   GAME.member.add(new BdMask({ game: GAME, x: 0, y: 0, color: 0x000000, id: 'all_mask', default_alpha: 0.0, event_enable: true}));
 
   GAME.member.add(new BdSprite({ game: GAME, x: 50, y: 383, image_key: 'tutorial_1', id: 'tutorial_movie', visible: false}));
-  GAME.func.changeGameMode('PRESTART');
+  func.setTutorialStep1();
 }
 
 func.initForBattle = function() {
@@ -212,30 +207,258 @@ func.initForBattle = function() {
   }, this);
 }
 
+func.setTutorialStep1 = function() {
+  // 용병 교체 버튼 선택 화면
+  GAME.data.tutorial_step = 1;
+  let mask = new BdMask({game: GAME, x: 0, y: 0, color:0x000000, id:'tutorial_mask', default_alpha: 0.6});
+  mask.changeInputEnableState(true);
+  GAME.member.add(mask);
+  GAME.member.get('deploy_mode_button').body.input.priorityID = 99;
+  GAME.member.add(new BdSprite({ game: GAME, x: 60, y: 333, image_key: 'tuto_all_red', id: 'tuto_all_red', default_alpha: 0}));
+  GAME.member.add(new BdSprite( { game: GAME, x: 140, y: 581, image_key: 'tuto_text_1', id: 'tuto_text'}));
+
+  let props = {
+    game: GAME,
+    x: 93,
+    y: 922,
+    image_key: 'tutorial_deploy_btn',
+    id: 'tutorial_deploy_btn',
+    animations: {
+      'run' : { data: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34], is_loop: true }
+    }
+  };
+  let tutorialDeployBtn = new BdSprite(props);
+  GAME.member.add(tutorialDeployBtn);
+  tutorialDeployBtn.playAnimation('run', 21);
+
+  let clickHand = new BdSprite( { game: GAME, x: 450, y: 580, image_key: 'click_hand_1', id: 'click_hand' });
+  GAME.member.add(clickHand);
+
+  let imageIndex = 0;
+  let timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
+    function(){
+      if(imageIndex === 2) {
+        imageIndex = 1;
+      } else {
+        imageIndex++;
+      }
+      clickHand.changeImage('click_hand_' + imageIndex);
+    }, this);
+  timeEvent.o_id = 'start_tutorial_event';
+
+  props = {
+    game: GAME,
+    x: 93,
+    y: 1062,
+    image_key: 'tutorial_start_btn',
+    id: 'tutorial_start_btn',
+    visible: true,
+    animations: {
+      'run' : { data: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], is_loop: true }
+    }
+  };
+  let tutorialStartBtn = new BdSprite(props);
+  GAME.member.add(tutorialStartBtn);
+}
+
+func.setUnitSelectModeForTutorial= function(index) {
+  let tutorialMask = GAME.member.get('tutorial_mask');
+  let tutoText = GAME.member.get('tuto_text');
+  let textPosition = tutoText.getPosition();
+
+  tutorialMask.bringToTop();
+  tutoText.setPosition(textPosition.x, textPosition.y - 115);
+  tutoText.changeImage('tuto_text_2');
+  tutoText.bringToTop();
+
+  GAME.data.my_units[index].unit_button.bringToTop();
+  GAME.data.my_units[index].unit_button_effect.bringToTop();
+}
+
+func.setUnitDeployModeForTutorial= function(index) {
+  let tutorialMask = GAME.member.get('tutorial_mask');
+  let tutoText = GAME.member.get('tuto_text');
+  let textPosition = tutoText.getPosition();
+
+  tutorialMask.bringToTop();
+  tutoText.setPosition(textPosition.x, textPosition.y - 115);
+  tutoText.changeImage('tuto_text_2');
+  tutoText.bringToTop();
+
+  GAME.data.my_units[index].unit_button.bringToTop();
+  GAME.data.my_units[index].unit_button_effect.bringToTop();
+}
+
+func.setTutorialStep2 = function(index) {
+  GAME.data.tutorial_step = 2;
+  let tutorialDeployBtn = GAME.member.get('tutorial_deploy_btn');
+  let deployModeButton = GAME.member.get('deploy_mode_button');
+  let tutoText = GAME.member.get('tuto_text');
+  deployModeButton.body.input.priorityID = 0;
+  func.setUnitSelectModeForTutorial(0)
+  tutorialDeployBtn.changeDisplayState(false);
+
+  let clickHand = GAME.member.get('click_hand');
+  clickHand.setPosition(40, 440);
+  let props = {
+    game: GAME,
+    x: 90,
+    y: 790,
+    image_key: 'btn_select_animation',
+    id: 'btn_select_animation_1',
+    animations: {
+      'run' : { data: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34], is_loop: true }
+    }
+  };
+  let btnSelectAnimation = new BdSprite(props)
+  GAME.member.add(btnSelectAnimation);
+  btnSelectAnimation.playAnimation('run', 25);
+
+  props.id = 'btn_select_animation_2'
+  props.x = props.x + 130;
+  btnSelectAnimation = new BdSprite(props);
+  GAME.member.add(btnSelectAnimation);
+  btnSelectAnimation.playAnimation('run', 25);
+
+  props.id = 'btn_select_animation_3'
+  props.x = props.x + 130;
+  btnSelectAnimation = new BdSprite(props);
+  GAME.member.add(btnSelectAnimation);
+  btnSelectAnimation.playAnimation('run', 25);
+  clickHand.bringToTop();
+
+}
+
+func.setTutorialStep3 = function() {
+  // 배치 화면
+  GAME.data.tutorial_step = 3;
+  GAME.member.get('tutorial_mask').bringToTop();
+  GAME.data.left_unit_bottom_panels[4].body.input.priorityID = 99;
+
+  GAME.member.get('active_panel').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_1').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_2').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_3').changeDisplayState(false);
+
+  let tutoText = GAME.member.get('tuto_text');
+  tutoText.bringToTop();
+  let clickHand = GAME.member.get('click_hand');
+  let clickHandPosition = clickHand.getPosition();
+  tutoText.changeImage('tuto_text_3');
+  clickHand.setPosition(85, 30);
+  let panel = new BdSprite({ game: GAME, x: 174, y: 416, image_key: 'panel_selected', id: 'tutorial_panel'});
+  panel.changeInputEnableState(true);
+  GAME.member.add(panel);
+  clickHand.bringToTop();
+}
+
+func.setTutorialStep4 = function() {
+  GAME.data.tutorial_step = 4;
+
+  GAME.data.my_units[1].unit_button.bringToTop();
+  GAME.data.my_units[2].unit_button.bringToTop();
+  GAME.member.get('btn_select_animation_1').bringToTop();
+  GAME.member.get('btn_select_animation_2').bringToTop();
+  // 선택 화면
+  let clickHand = GAME.member.get('click_hand');
+  clickHand.changeDisplayState(false);
+  GAME.member.get('tutorial_panel').destroy();
+  let tutoText = GAME.member.get('tuto_text');
+  tutoText.changeImage('tuto_text_2');
+  GAME.member.get('btn_select_animation_1').changeDisplayState(true);
+  GAME.member.get('btn_select_animation_2').changeDisplayState(true);
+
+}
+
+func.setTutorialStep5 = function() {
+  // 기타 유닛 배치 화면
+  GAME.data.tutorial_step = 5;
+  let tutoText = GAME.member.get('tuto_text');
+  let clickHand = GAME.member.get('click_hand');
+  tutoText.changeImage('tuto_text_3');
+  clickHand.setPosition(40, 440);
+  GAME.member.get('btn_select_animation_1').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_2').changeDisplayState(false);
+
+  let tweenConfig = { alpha: 1 };
+  let delay = 0;
+  let repeat = -1;
+  let yoyo = true;
+  let tutoAllRed = GAME.member.get('tuto_all_red')
+  tutoAllRed.startTween(tweenConfig, 500, delay, repeat, yoyo);
+
+  clickHand.bringToTop();
+}
+
+func.setTutorialStep6 = function() {
+  // 기타 유닛 배치 화면
+  GAME.data.tutorial_step = 6;
+  GAME.member.get('active_panel').changeDisplayState(false);
+  let tutoAllRed = GAME.member.get('tuto_all_red')
+  tutoAllRed.changeDisplayState(false);
+  let clickHand = GAME.member.get('click_hand');
+  clickHand.changeDisplayState(false);
+  let tutoText = GAME.member.get('tuto_text');
+  tutoText.changeImage('tuto_text_2');
+  GAME.member.get('btn_select_animation_1').changeDisplayState(true);
+  GAME.member.get('btn_select_animation_2').changeDisplayState(false);
+  clickHand.bringToTop();
+}
+
+func.setTutorialStep7 = function() {
+  // 기타 유닛 배치 화면
+  GAME.data.tutorial_step = 7;
+  let tutoText = GAME.member.get('tuto_text');
+  let clickHand = GAME.member.get('click_hand');
+  tutoText.changeImage('tuto_text_3');
+  clickHand.setPosition(40, 440);
+  GAME.member.get('btn_select_animation_1').changeDisplayState(false);
+  let tutoAllRed = GAME.member.get('tuto_all_red');
+  tutoAllRed.changeDisplayState(true);
+  clickHand.bringToTop();
+}
+
+func.setTutorialStep8 = function() {
+  GAME.data.tutorial_step = 8;
+  let tutoAllRed = GAME.member.get('tuto_all_red')
+  let clickHand = GAME.member.get('click_hand');
+  let tutoText = GAME.member.get('tuto_text');
+  let activePanel = GAME.member.get('active_panel');
+  let tutorialStartBtn = GAME.member.get('tutorial_start_btn');
+  clickHand.changeDisplayState(false);
+  tutoAllRed.changeDisplayState(false);
+  activePanel.changeDisplayState(false);
+  tutoText.changeImage('tuto_text_4');
+  GAME.member.get('btn_select_animation_1').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_2').changeDisplayState(false);
+  GAME.member.get('btn_select_animation_3').changeDisplayState(false);
+  tutoText.setPosition(140, 581);
+  tutorialStartBtn.changeDisplayState(true);
+  tutorialStartBtn.playAnimation('run', 21);
+}
+
+
+func.initUnitButton = function() {
+  let myUnits = GAME.data.my_units;
+  for(let i = 0 ; i < myUnits.length; i++) {
+    myUnits[i].deselectUnitButton();
+  }
+}
+
+func.selectUnitButton = function() {
+  let myUnits = GAME.data.my_units;
+  for(let i = 0 ; i < myUnits.length; i++) {
+    if(myUnits[i].isButtonSelected()) {
+      myUnits[i].selectUnitButton();
+    }
+  }
+}
+
 func.changeGameMode = function(mode) {
   GAME.data.game_mode = mode;
-  if(mode === 'PRESTART') {
-    let startTuto = new BdSprite({ game: GAME, x: 50, y: 0, image_key: 'start_tutorial_1', id: 'start_tutorial'});
-    startTuto.changeInputEnableState(true);
-    let imageIndex = 1;
-    let timeEvent = GAME.time.events.loop(Phaser.Timer.SECOND / 2,
-      function(){
-        if(imageIndex === 3) {
-          imageIndex = 1;
-        } else {
-          imageIndex++;
-        }
-        startTuto.changeImage('start_tutorial_' + imageIndex);
-      }, this);
-    timeEvent.o_id = 'start_tutorial_event';
-    GAME.member.add(timeEvent);
-
-  } else if(mode === 'DEPLOY') {
+  if(mode === 'DEPLOY') {
     func.showMask();
-    let smallTip = GAME.member.get('small_tip');
-    if(smallTip) {
-      smallTip.destroy();
-    }
+    func.showUnitButton();
     GAME.member.get('deploy_mode_footer').changeDisplayState(true);
     GAME.member.get('active_panel').changeDisplayState(true);
   } else if(mode === 'WAIT') {
@@ -445,7 +668,7 @@ func.alertStartRound = function(roundCount) {
   displayRound.changeImage('round_' + roundCount);
   bgRound.changeImage('bg_round_' + roundCount);
 
-  GAME.member.add(new BdMask({game: GAME, x: 0, y: 0, color:0x000000, id:'temp_mask', default_alpha: 0.8}))
+  GAME.member.add(new BdMask({game: GAME, x: 0, y: 0, color:0x000000, id:'temp_mask', default_alpha: 0.8}));
 
   displayRound.bringToTop();
   displayRound.startTween({alpha: 1}, 400, 0, 0);
@@ -463,7 +686,7 @@ func.deployUnit = function(x, y, panelIndex) {
   let maxMyUnitCount = GAME.data.max_my_unit_count;
   for(let i = 0 ; i < myUnits.length ; i++) {
     let unit = myUnits[i];
-    if(unit.isButtonSelected) {
+    if(unit.isButtonSelected()) {
       result = unit;
       deployedMyUnits[myDeployedUnitCount] = unit;
       myDeployedUnitCount++;
@@ -478,9 +701,6 @@ func.deployUnit = function(x, y, panelIndex) {
   }
   if(myDeployedUnitCount >= maxMyUnitCount) {
     GAME.func.changeGameMode('NORMAL');
-  }
-  if(myDeployedUnitCount === 1) {
-    GAME.member.get('battle_start_button').changeImage('btn_active_start');
   }
   return result;
 }
@@ -504,6 +724,13 @@ func.getAliveEnemies = function(type) {
 func.hitEffect = function() {
   GAME.func.showRedMask();
   Utils.shakingShaking(GAME, 30, 3, GAME.func.hideRedMask);
+}
+
+func.showUnitButton = function() {
+  let myUnits = GAME.data.my_units;
+  for(let i = 0 ; i < myUnits.length; i++) {
+    myUnits[i].showUnitButton();
+  }
 }
 
 func.setUnitDeployButton = function() {
@@ -533,8 +760,8 @@ func.sortUnit = function() {
 }
 
 func.sortUnitButton = function() {
-  let firstX = 44 + 50;
-  let firstY = 798;
+  let firstX = 154;
+  let firstY = 855;
   let index = 0;
   let myUnits = GAME.data.my_units;
   for(let i = 0 ; i < myUnits.length ; i++) {
@@ -542,15 +769,6 @@ func.sortUnitButton = function() {
     if(!unit.deployed) {
       unit.moveButtonPosition(firstX + (index * 130), firstY);
       index++;
-    }
-  }
-}
-
-func.initUnitButton = function() {
-  let myUnits = GAME.data.my_units;
-  for(let i = 0 ; i < myUnits.length; i++) {
-    if(myUnits[i].isButtonSelected) {
-      myUnits[i].deselectUnitButton();
     }
   }
 }

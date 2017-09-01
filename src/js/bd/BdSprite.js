@@ -13,12 +13,6 @@ class BdSprite extends FsnSprite {
     let game = this.game;
     let tween = null;
     switch(this.o_id) {
-      case "small_tip":
-        tween = game.add.tween(this.body).to(tweenConfig, duration, Phaser.Easing.Linear.None, true, delay, repeat, yoyo);
-        tween.interpolation(function(v, k){
-          return Phaser.Math.bezierInterpolation(v, k);
-        });
-        break;
       case "display_round":
         tween = game.add.tween(this.body).to(tweenConfig, duration, Phaser.Easing.Linear.None, true, delay, repeat, yoyo);
         tween.onComplete.add(function() {
@@ -129,8 +123,18 @@ class BdSprite extends FsnSprite {
     }
     switch(oId) {
       case "panel_selected":
+        if(game.data.tutorial_step === 3) {
+          game.func.setTutorialStep4();
+        }
+        if(game.data.tutorial_step === 5) {
+          game.func.setTutorialStep6();
+        }
+        if(game.data.tutorial_step === 7) {
+          game.func.setTutorialStep8();
+        }
+
         if(gameMode === 'DEPLOY') {
-          if(this.getData('unit')) {
+          if(this.getData('unit') !== null) {
             return;
           }
           let unit = game.func.deployUnit(this.body.x, this.body.y, this.getData('index'));

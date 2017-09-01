@@ -8,10 +8,18 @@ class BdButton extends FsnButton {
 
   onDown(button) {
     let game = this.game;
-    switch(this.o_id) {
+    let oId = this.o_id;
+    if(oId.indexOf('my_unit_button') > -1) {
+      oId = 'my_unit_button';
+    }
+    switch(oId) {
       case "deploy_mode_button":
         game.add.tween(button.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
-        if(game.data.game_mode === 'NORMAL') {
+
+        if(game.data.tutorial_step === 1) {
+          game.func.setTutorialStep2();
+        }
+        if(game.data.game_mode !== 'DEPLOY') {
           game.func.changeGameMode('DEPLOY');
         } else {
           game.func.changeGameMode('NORMAL');
@@ -32,6 +40,21 @@ class BdButton extends FsnButton {
         game.func.closeTutorial();
         let tutorialEvent = game.member.get('tutorial_event');
         game.time.events.remove(tutorialEvent);
+        break;
+
+      case "my_unit_button":
+        game.func.initUnitButton();
+        this.setData('is_selected', true);
+        game.func.selectUnitButton();
+        if(game.data.tutorial_step === 2) {
+          game.func.setTutorialStep3();
+        }
+        if(game.data.tutorial_step === 4) {
+          game.func.setTutorialStep5();
+        }
+        if(game.data.tutorial_step === 6) {
+          game.func.setTutorialStep7();
+        }
         break;
 
       case "continue_btn":

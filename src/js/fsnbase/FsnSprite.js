@@ -42,6 +42,11 @@ class FsnSprite extends FsnBase {
     this.body.animations.currentAnim.speed = frameRate;
   }
 
+  stopAnimation() {
+    this.body.animations.currentAnim.stop();
+  }
+
+
   onAniComplete(sprite, animation) {
     console.info("Please redefine onAniComplete");
   }
