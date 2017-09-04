@@ -3,7 +3,7 @@
     "axeman": {
       "name": "axeman",
       "hp":100,
-      "power":50,
+      "power":60,
       "armor":100,
       "agility":100,
       "icon_image": "icon_01",
@@ -56,7 +56,7 @@
     "craw": {
       "name": "craw",
       "hp":100,
-      "power":10,
+      "power":30,
       "armor":100,
       "agility":100,
       "unit_image": "craw",

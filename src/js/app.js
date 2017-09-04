@@ -4,7 +4,7 @@ import { CloseButton, SoundButton, Member, Utils } from './fsnbase'
 
 let IS_MUTE;
 const MY_UNIT_NAME_ARRAY = ['axeman','swordman','swordman'];
-const ENEMIES_NAME_ARRAY = [null,null,null,null,'skel',null,null,null,null];
+const ENEMIES_NAME_ARRAY = ['craw',null,null,null,'skel',null,null,null,'craw'];
 let config = Utils.getGameConfig('./assets/data.json');
 let gameConfig = config.game_config;
 let GAME = new Phaser.Game(gameConfig.game_width, gameConfig.game_height, Phaser.CANVAS, '',
@@ -172,6 +172,7 @@ function update() {
     let isEndTurn = currentTurnUnit.isEndAction() || !(currentTurnUnit.isAlive());
     if(isEndTurn) {
       GAME.data.current_turn++;
+      currentTurnUnit.initTurnState();
     } else {
       currentTurnUnit.update();
     }
@@ -738,7 +739,6 @@ GAME.func = {
   },
 
   setTutorialStep2: function(index) {
-    console.info('첫번째 유닛 선택 화면');
     GAME.data.tutorial_step = 2;
     let tutorialDeployBtn = GAME.member.get('tutorial_deploy_btn');
     let deployModeButton = GAME.member.get('deploy_mode_button');
@@ -755,7 +755,6 @@ GAME.func = {
 
   setTutorialStep3: function() {
     // 배치 화면
-    console.info('첫번째 배치 화면');
     GAME.data.tutorial_step = 3;
 
     GAME.member.get('tutorial_mask').bringToTop();
@@ -780,10 +779,8 @@ GAME.func = {
   },
 
   setTutorialStep4: function() {
-    console.info('두번째 유닛 선택 화면');
     GAME.data.tutorial_step = 4;
     let tutoText = GAME.member.get('tuto_text');
-
     Utils.removeEvent(GAME, 'start_tutorial_event');
     GAME.member.get('click_hand').destroy();
     GAME.member.get('tutorial_mask').bringToTop();
@@ -793,11 +790,14 @@ GAME.func = {
 
     GAME.func.setUnitSelectModeForTutorial(1);
     GAME.func.setUnitSelectModeForTutorial(2);
+
+    for(let i = 0 ; i < GAME.data.deployed_my_units.length ; i++) {
+      GAME.data.deployed_my_units[i].updateZindex();
+    }
     GAME.member.get('tutorial_button').bringToTop();
   },
 
   setTutorialStep5: function() {
-    console.info('두번째 유닛 배치 화면');
     GAME.data.tutorial_step = 5;
     let tutoText = GAME.member.get('tuto_text');
 
@@ -816,12 +816,13 @@ GAME.func = {
     for(let i = 0 ; i < GAME.data.left_unit_bottom_panels.length ; i++) {
       GAME.data.left_unit_bottom_panels[i].body.input.priorityID = 100;
     }
-    GAME.data.deployed_my_units[0].updateZindex();
+    for(let i = 0 ; i < GAME.data.deployed_my_units.length ; i++) {
+      GAME.data.deployed_my_units[i].updateZindex();
+    }
     GAME.member.get('tutorial_button').bringToTop();
   },
 
   setTutorialStep6: function() {
-    console.info("세번째 유닛 선택 화면");
     GAME.data.tutorial_step = 6;
     let tutoAllRed = GAME.member.get('tuto_all_red')
     tutoAllRed.changeDisplayState(false);
@@ -835,22 +836,26 @@ GAME.func = {
         GAME.func.setUnitSelectModeForTutorial(i);
       }
     }
+    for(let i = 0 ; i < GAME.data.deployed_my_units.length ; i++) {
+      GAME.data.deployed_my_units[i].updateZindex();
+    }
     GAME.member.get('tutorial_button').bringToTop();
   },
 
   setTutorialStep7: function() {
-    console.info("세번째 유닛 배치 화면");
     GAME.data.tutorial_step = 7;
     GAME.member.get('btn_select_animation_2').destroy();
     GAME.member.get('btn_select_animation_3').destroy();
     GAME.func.updateTutorialText('tuto_text_3');
     let tutoAllRed = GAME.member.get('tuto_all_red');
     tutoAllRed.changeDisplayState(true);
+    for(let i = 0 ; i < GAME.data.deployed_my_units.length ; i++) {
+      GAME.data.deployed_my_units[i].updateZindex();
+    }
     GAME.member.get('tutorial_button').bringToTop();
   },
 
   setTutorialStep8: function() {
-    console.info("시작 대기 화면");
     GAME.data.tutorial_step = 8;
     let tutorialStartBtn = GAME.member.get('tutorial_start_btn');
     GAME.member.get('tuto_all_red').destroy();

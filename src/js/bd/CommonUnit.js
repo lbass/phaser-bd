@@ -114,6 +114,11 @@ class CommonUnit {
     this.showHpGrp();
   }
 
+  initTurnState() {
+    this.is_inaction = false;
+    this.is_end_attack = false;
+  }
+
   readyToBattle() {
     this.is_inaction = false;
     this.unit_flag.changeDisplayState(false);

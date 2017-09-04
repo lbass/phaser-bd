@@ -65,7 +65,7 @@ class BdSprite extends FsnSprite {
               this.playAnimation('normal', 15);
               game.func.endUnitAction(this.getData('o_id'));
             }, this);
-            animation.onComplete.removeAll();
+            // animation.onComplete.removeAll();
           } else {
             let targets = this.getData('targets');
             let power = this.getData('power');
