@@ -74,13 +74,13 @@ class MyUnit extends CommonUnit {
     let count = 0;
     let position = this.unit_body.getPosition();
     for(let key in this.unit_hp_grp) {
-      let x = position.x + 70;
-      this.unit_hp_grp[key].setPosition(x - (this.HP_DISTANCE * count), position.y + 20);
+      let x = position.x + 80;
+      this.unit_hp_grp[key].setPosition(x - (this.HP_DISTANCE * count), position.y + 40);
       this.unit_hp_grp[key].changeDisplayState(true);
       count++
     }
     this.unit_hp_bar.changeDisplayState(true);
-    this.unit_hp_bar.setPosition(position.x + 34, position.y);
+    this.unit_hp_bar.setPosition(position.x + 44, position.y + 20);
   }
 
   viewGreenFoothold() {

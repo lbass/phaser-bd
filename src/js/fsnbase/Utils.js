@@ -12,6 +12,18 @@ class Utils {
       callback();
     }, this);
   }
+
+  static removeEvent(game, eventId) {
+    let event = game.member.get(eventId);
+    game.time.events.remove(event);
+  }
+
+  static getGameConfig(path) {
+    let request = new XMLHttpRequest();
+    request.open('GET', path, false);
+    request.send();
+    return JSON.parse(request.responseText);
+  }
 }
 
 export default Utils;

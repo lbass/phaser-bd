@@ -3,7 +3,7 @@
     "axeman": {
       "name": "axeman",
       "hp":100,
-      "power":100,
+      "power":50,
       "armor":100,
       "agility":100,
       "icon_image": "icon_01",

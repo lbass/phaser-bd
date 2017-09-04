@@ -1,5 +1,5 @@
 'use strict'
-import {FsnButton} from '../fsnbase';
+import {FsnButton, Utils} from '../fsnbase';
 
 class BdButton extends FsnButton {
   constructor(props) {
@@ -16,19 +16,20 @@ class BdButton extends FsnButton {
       case "deploy_mode_button":
         game.add.tween(button.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
 
-        if(game.data.tutorial_step === 1) {
-          game.func.setTutorialStep2();
-        }
         if(game.data.game_mode !== 'DEPLOY') {
           game.func.changeGameMode('DEPLOY');
         } else {
           game.func.changeGameMode('NORMAL');
+        }
+        if(game.data.tutorial_step === 1) {
+          game.func.setTutorialStep2();
         }
         break;
 
       case "battle_start_button":
         game.add.tween(button.scale).to({x: 1.03, y: 1.03}, 100, Phaser.Easing.Linear.None, true, 0, 0, true);
         game.func.initForBattle();
+        game.func.endTutorial();
         break;
 
       case "tutorial_button":
@@ -38,14 +39,14 @@ class BdButton extends FsnButton {
       case "popup_close":
         this.destroy();
         game.func.closeTutorial();
-        let tutorialEvent = game.member.get('tutorial_event');
-        game.time.events.remove(tutorialEvent);
+        Utils.removeEvent(game, 'tutorial_event');
         break;
 
       case "my_unit_button":
         game.func.initUnitButton();
         this.setData('is_selected', true);
         game.func.selectUnitButton();
+
         if(game.data.tutorial_step === 2) {
           game.func.setTutorialStep3();
         }

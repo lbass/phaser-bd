@@ -63,9 +63,7 @@ class BdSprite extends FsnSprite {
               this.changeDisplayState(true);
               this.setAlpha(1);
               this.playAnimation('normal', 15);
-              this.setData('is_end_attack', true);
-              this.game.func.hideBattleUnitPanel();
-              this.game.func.hideSkill();
+              game.func.endUnitAction(this.getData('o_id'));
             }, this);
             animation.onComplete.removeAll();
           } else {
@@ -81,9 +79,7 @@ class BdSprite extends FsnSprite {
               target.attacked(power);
             }
             this.setPosition(selfPosition.x, selfPosition.y);
-            this.setData('is_end_attack', true);
-            this.game.func.hideBattleUnitPanel();
-            this.game.func.hideSkill();
+            game.func.endUnitAction(this.getData('o_id'));
           }
         }
         break;
@@ -95,9 +91,9 @@ class BdSprite extends FsnSprite {
   onAniLoop(sprite, animation) {
     let game = this.game;
     let oId = this.o_id;
-    if(this.o_id.indexOf('my_unit_body') > -1) {
+    if(this.o_id && this.o_id.indexOf('my_unit_body') > -1) {
       oId = 'my_unit_body';
-    } else if(this.o_id.indexOf('enemy_unit_body') > -1) {
+    } else if(this.o_id && this.o_id.indexOf('enemy_unit_body') > -1) {
       oId = 'enemy_unit_body';
     }
     switch(oId) {
@@ -123,15 +119,6 @@ class BdSprite extends FsnSprite {
     }
     switch(oId) {
       case "panel_selected":
-        if(game.data.tutorial_step === 3) {
-          game.func.setTutorialStep4();
-        }
-        if(game.data.tutorial_step === 5) {
-          game.func.setTutorialStep6();
-        }
-        if(game.data.tutorial_step === 7) {
-          game.func.setTutorialStep8();
-        }
 
         if(gameMode === 'DEPLOY') {
           if(this.getData('unit') !== null) {
@@ -141,6 +128,15 @@ class BdSprite extends FsnSprite {
           this.setData('unit', unit);
           game.func.sortUnit();
           game.func.sortUnitButton();
+        }
+        if(game.data.tutorial_step === 3) {
+          game.func.setTutorialStep4();
+        }
+        if(game.data.tutorial_step === 5) {
+          game.func.setTutorialStep6();
+        }
+        if(game.data.tutorial_step === 7) {
+          game.func.setTutorialStep8();
         }
         break;
       case "start_tutorial":
@@ -163,7 +159,7 @@ class BdSprite extends FsnSprite {
         let myUnits = game.data.my_units;
         let gameMode = game.data.game_mode;
         for(let i = 0 ; i < myUnits.length ; i++) {
-          if(myUnits[i].isButtonSelected) {
+          if(myUnits[i].isButtonSelected()) {
             if(gameMode === 'DEPLOY') {
               sprite.alpha = 1;
               break;

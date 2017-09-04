@@ -49,6 +49,10 @@ class FsnBase {
     this.game.member.remove(this.o_id);
     this.body.destroy();
   }
+
+  setInputPriority(priority) {
+    this.body.input.priorityID = priority;
+  }
 }
 
 export default FsnBase;

@@ -41,7 +41,7 @@ class CommonUnit {
     // unit.anchor.set(0.5, 0.5);
 
     this.unit_body = new BdSprite(unitProps);
-    this.unit_body.setData('is_end_attack', false);
+    this.unit_body.setData('o_id', this.o_id);
     this.unit_body.setData('unit_name', this.unitData.name);
 
     this.unit_flag = new BdSprite({ game: this.game, x: x + 150, y:  y, image_key: 'flag_1', id: this.unitData.type + '_unit_flag_' + props.id, visible: false });
@@ -91,7 +91,7 @@ class CommonUnit {
   }
 
   isEndAction() {
-    return this.unit_body.getData('is_end_attack');
+    return this.is_end_attack;
   }
 
   getPanelIndex() {
@@ -109,8 +109,12 @@ class CommonUnit {
     }
   }
 
+  endUnitAction() {
+    this.is_end_attack = true;
+    this.showHpGrp();
+  }
+
   readyToBattle() {
-    this.isEndTurn = false;
     this.is_inaction = false;
     this.unit_flag.changeDisplayState(false);
     this.updateHp();
@@ -146,7 +150,7 @@ class CommonUnit {
   startAction() {
     let enemyInfoList = this.game.func.getAliveEnemies(this.unitData.type);
     if(enemyInfoList.length <= 0) {
-      this.unit_body.setData('is_end_attack', true);
+      this.is_end_attack = true;
       return;
     }
 
@@ -199,7 +203,14 @@ class CommonUnit {
     return panelPosition;
   }
 
-  hideHpGrpDisplayState() {
+  showHpGrp() {
+    this.unit_hp_bar.changeDisplayState(true);
+    for(let key in this.unit_hp_grp) {
+      this.unit_hp_grp[key].changeDisplayState(true);
+    }
+  }
+
+  hideHpGrp() {
     this.unit_hp_bar.changeDisplayState(false);
     for(let key in this.unit_hp_grp) {
       this.unit_hp_grp[key].changeDisplayState(false);
@@ -208,7 +219,7 @@ class CommonUnit {
 
   startAttacking(movePath, targets) {
     this.unit_body.setAlpha(0.3);
-    this.hideHpGrpDisplayState();
+    this.hideHpGrp();
     this.unit_hp_bar.changeDisplayState(false);
     this.unit_body.playAnimation('attack', 21);
 
@@ -296,13 +307,13 @@ class CommonUnit {
     let count = 0;
     let position = this.unit_body.getPosition();
     for(let key in this.unit_hp_grp) {
-      let x = position.x + 130;
-      this.unit_hp_grp[key].setPosition(x - (this.HP_DISTANCE * count), position.y + 20);
+      let x = position.x + 160;
+      this.unit_hp_grp[key].setPosition(x - (this.HP_DISTANCE * count), position.y + 40);
       this.unit_hp_grp[key].changeDisplayState(true);
       count++
     }
     this.unit_hp_bar.changeDisplayState(true);
-    this.unit_hp_bar.setPosition(position.x + 94, position.y);
+    this.unit_hp_bar.setPosition(position.x + 114, position.y + 20);
   }
 
   viewSkillName() {
